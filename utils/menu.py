@@ -3,10 +3,12 @@ import dbus
 
 gi.require_version('Bamf', '3')
 
+from typing import *
+
 from gi.repository import Gio
 from gi.repository import Bamf
 
-from gnomehud.utils.fuzzy import match_replace
+from utils.fuzzy import match_replace
 
 
 def format_label(parts):

@@ -7,7 +7,7 @@ from gi.repository import Gtk
 from subprocess import Popen
 from subprocess import PIPE
 
-from gnomehud.utils.menu import DbusMenu
+from utils.menu import DbusMenu
 
 
 def rgba_to_hex(color):

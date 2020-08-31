@@ -10,10 +10,10 @@ from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
 
-from gnomehud.utils.menu import DbusMenu
-from gnomehud.utils.fuzzy import FuzzyMatch
-from gnomehud.utils.fuzzy import normalize_string
-from gnomehud.utils.fuzzy import match_replace
+from utils.menu import DbusMenu
+from utils.fuzzy import FuzzyMatch
+from utils.fuzzy import normalize_string
+from utils.fuzzy import match_replace
 
 
 def normalize_markup(text):

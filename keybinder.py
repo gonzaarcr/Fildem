@@ -6,8 +6,8 @@ gi.require_version('Keybinder', '3.0')
 
 from gi.repository import Keybinder, GLib
 
-from gnomehud.command import default_hud_menu
-from gnomehud.command import rofi_hud_menu
+from command import default_hud_menu
+from command import rofi_hud_menu
 
 
 def run_keybinder(callback):

@@ -4,12 +4,13 @@ import os
 import sys
 import threading
 
-from gnomehud.handlers.default import HudMenu
-from gnomehud.handlers.rofi import RofiMenu
+from handlers.default import HudMenu
+from handlers.rofi import RofiMenu
 
 
 def run_command(module, function):
-  args = 'python3 -c "from gnomehud.%s import %s as run; run()"'
+  PATH = '~/wip/gnomehud'
+  args = 'cd '+ PATH + '; ' + 'python3 -c "from %s import %s as run; run()"'
   args = args % (module, function)
 
   proc = threading.Thread(target=os.system, args=[args])
