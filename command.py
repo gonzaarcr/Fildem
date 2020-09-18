@@ -5,6 +5,7 @@ import sys
 import threading
 
 from handlers.default import HudMenu
+from handlers.global_menu import GlobalMenu
 from handlers.rofi import RofiMenu
 
 
@@ -23,7 +24,7 @@ def run_hud_menu(menu):
 
 
 def default_hud_menu(*args):
-  menu = HudMenu()
+  menu = GlobalMenu()
   menu.run()
 
 

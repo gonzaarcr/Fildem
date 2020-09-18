@@ -8,6 +8,17 @@ BUS_PATH = '/com/canonical/AppMenu/Registrar'
 
 
 class AppMenuService(dbus.service.Object):
+  '''
+    Types:
+      - u: int
+      - a: array
+      - y: byte
+      - s: string
+      - o: DBus object path 
+      - g: DBus type signature
+
+    https://people.gnome.org/~ryanl/glib-docs/gvariant-format-strings.html
+  '''
   def __init__(self):
     self.window_dict = dict()
 
@@ -15,28 +26,23 @@ class AppMenuService(dbus.service.Object):
     dbus.service.Object.__init__(self, bus_name, BUS_PATH)
 
   @dbus.service.method(BUS_NAME, in_signature='uo', sender_keyword='sender')
-
   def RegisterWindow(self, windowId, menuObjectPath, sender):
     self.window_dict[windowId] = [dbus.String(sender), dbus.ObjectPath(menuObjectPath)]
 
   @dbus.service.method(BUS_NAME, in_signature='u')
-
   def UnregisterWindow(self, windowId):
     if windowId in self.window_dict:
       del self.window_dict[windowId]
 
   @dbus.service.method(BUS_NAME, in_signature='u', out_signature='so')
-
   def GetMenuForWindow(self, windowId):
     if windowId in self.window_dict:
       return self.window_dict[windowId]
 
   @dbus.service.method(BUS_NAME)
-
   def GetMenus(self):
     return self.window_dict
 
   @dbus.service.method(BUS_NAME)
-
   def Q(self):
     GLib.MainLoop().quit()

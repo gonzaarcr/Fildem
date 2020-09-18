@@ -28,7 +28,8 @@ class DbusGtkMenuItem(object):
   def __init__(self, item, path=[]):
     self.path   = path
     self.action = str(item.get('action', ''))
-    self.accel  = str(item.get('accel', ''))
+    self.accel  = str(item.get('accel', '')) # <Primary><Shift><Alt>p
+    self.shortcut = str(item.get('shortcut', ''))
     self.label  = normalize_label(item.get('label', ''))
     self.text   = format_label(self.path + [self.label])
 
@@ -38,6 +39,8 @@ class DbusGtkMenu(object):
   def __init__(self, session, window):
     self.results      = {}
     self.actions      = {}
+    self.accels       = {}
+    self.items        = []
     self.session      = session
     self.bus_name     = window.get_utf8_prop('_GTK_UNIQUE_BUS_NAME')
     self.app_path     = window.get_utf8_prop('_GTK_APPLICATION_OBJECT_PATH')
@@ -78,12 +81,14 @@ class DbusGtkMenu(object):
     for menu in self.results.get((menu[0], menu[1]), []):
       if 'label' in menu:
         menu_item = DbusGtkMenuItem(menu, labels)
+
         menu_path = labels + [menu_item.label]
 
         if ':submenu' in menu:
           self.collect_entries(menu[':submenu'], menu_path)
         elif 'action' in menu:
           self.actions[menu_item.text] = menu_item.action
+          self.items.append(menu_item)
 
       elif ':section' in menu:
         self.collect_entries(menu[':section'], labels)
@@ -94,15 +99,31 @@ class DbusAppMenuItem(object):
   def __init__(self, item, path=[]):
     self.path   = path
     self.action = int(item[0])
-    self.accel  = item[1].get('shortcut', '')
+    self.accel  = self.get_shorcut(item[1])
     self.label  = normalize_label(item[1].get('label', ''))
     self.text   = format_label(self.path + [self.label])
+    self.enabled = item[1].get('enabled', True)
+    self.visible = item[1].get('visible', True)
+    self.icon_data = item[1].get('icon_data', bytearray())
 
+  def get_shorcut(self, item):
+    shortcut = item.get('shortcut', '')
+    if len(shortcut) == 0:
+      return shortcut
+
+    shortcut = shortcut[0]
+    ret = ''
+    for i, v in enumerate(shortcut):
+      # The last one should be on caps?
+      ret += '<' + v + '>' if (i != len(shortcut) - 1) else v
+    return ret
 
 class DbusAppMenu(object):
 
   def __init__(self, session, window):
     self.actions   = {}
+    self.accels    = {}
+    self.items     = []
     self.session   = session
     self.xid       = window.get_xid()
     self.interface = self.get_interface()
@@ -144,6 +165,7 @@ class DbusAppMenu(object):
 
     elif bool(menu_item.label):
       self.actions[menu_item.text] = menu_item.action
+      self.items.append(menu_item)
 
 
 class DbusMenu:
@@ -174,6 +196,15 @@ class DbusMenu:
     self.handle_empty(actions)
 
     return actions.keys()
+
+  def accel(self):
+    accel = { **self.gtkmenu.accels, **self.appmenu.accels }
+    return accel
+
+  @property
+  def items(self):
+    items = self.gtkmenu.items + self.appmenu.items
+    return items
 
   def activate(self, selection):
     if selection in self.gtkmenu.actions:
