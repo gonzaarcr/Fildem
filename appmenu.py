@@ -6,11 +6,12 @@ from gi.repository import GLib
 from dbus.mainloop.glib import DBusGMainLoop
 
 from utils.service import BUS_NAME
-from utils.service import AppMenuService
+from utils.service import AppMenuService, MyService
 
 
 def run_service():
   AppMenuService()
+  MyService()
 
   try:
     GLib.MainLoop().run()

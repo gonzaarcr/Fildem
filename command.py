@@ -31,12 +31,10 @@ def default_hud_menu(*args):
 def rofi_hud_menu(*args):
   menu = RofiMenu()
   menu.run()
-  # menu.start()
-  # start
 
 
 def main():
-  if True and sys.stdin.isatty():
+  if sys.stdin.isatty():
     run_hud_menu('main')
   else:
     default_hud_menu()

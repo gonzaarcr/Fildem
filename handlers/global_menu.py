@@ -1,19 +1,24 @@
 import gi
+import dbus
 import time
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
+gi.require_version('Keybinder', '3.0')
 
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
+from gi.repository import Keybinder
 
 from utils.menu import DbusMenu
+from utils.service import BUS_NAME, BUS_PATH
 from utils.fuzzy import FuzzyMatch
 from utils.fuzzy import normalize_string
 from utils.fuzzy import match_replace
+from utils.shortcut_decoder import parse_accel
 
 def get_separator():
   return u'\u0020\u0020\u00BB\u0020\u0020'
@@ -23,13 +28,6 @@ def normalize_markup(text):
   return text.replace('&', '&amp;')
 
 
-def run_generator(function):
-  priority  = GLib.PRIORITY_LOW
-  generator = function()
-
-  GLib.idle_add(lambda: next(generator, False), priority=priority)
-
-
 def inject_custom_style(widget, style_string):
   provider = Gtk.CssProvider()
   provider.load_from_data(style_string.encode())
@@ -37,77 +35,6 @@ def inject_custom_style(widget, style_string):
   screen   = Gdk.Screen.get_default()
   priority = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
   Gtk.StyleContext.add_provider_for_screen(screen, provider, priority)
-
-
-def add_style_class(widget, class_names):
-  context = widget.get_style_context()
-  context.add_class(class_names)
-
-
-class CommandListItem(Gtk.ListBoxRow):
-
-  value = GObject.Property(type=str)
-  index = GObject.Property(type=int)
-  query = GObject.Property(type=str)
-
-  def __init__(self, depth, *args, **kwargs):
-    super(Gtk.ListBoxRow, self).__init__(*args, **kwargs)
-
-    self.set_can_focus(False)
-
-    self.query = self.get_property('query')
-    self.value = self.get_property('value')
-    self.index = self.get_property('index')
-    self.fuzzy = FuzzyMatch(text=self.value)
-
-    self.label = Gtk.Label(margin=6, margin_left=10, margin_right=10)
-    self.label.set_justify(Gtk.Justification.LEFT)
-    self.label.set_halign(Gtk.Align.START)
-
-    self.connect('notify::query', self.on_query_notify)
-
-    self.add(self.label)
-    label = self.value.split(get_separator())[depth]
-    self.set_label(label)
-
-    self.show_all()
-
-  def get_label(self):
-    return self.label.get_label()
-
-  def set_label(self, text):
-    self.label.set_label(normalize_markup(text))
-
-  def set_markup(self, markup):
-    self.label.set_markup(normalize_markup(markup))
-
-  def position(self):
-    return self.fuzzy.score if bool(self.query) else -1
-
-  def visibility(self):
-    return self.fuzzy.score > -1 if bool(self.query) else True
-
-  def highlight_match(self, match):
-    return '<u><b>%s</b></u>' % match.group(0)
-
-  def highlight_matches(self):
-    words = self.query.replace(' ', '|')
-    value = match_replace(words, self.highlight_match, self.value)
-
-    self.set_markup(value)
-
-  def do_label_markup(self):
-    if bool(self.query):
-      self.highlight_matches()
-
-    elif '<u>' in self.get_label():
-      self.set_label(self.value)
-
-  def on_query_notify(self, *args):
-    self.fuzzy.set_query(self.query)
-
-    if self.visibility():
-      GLib.idle_add(self.do_label_markup, priority=GLib.PRIORITY_HIGH_IDLE)
 
 
 class Menu(Gtk.Menu):
@@ -130,9 +57,9 @@ class Menu(Gtk.Menu):
         menu_item.set_property('action_name', 'app.' + str(item.action))
         label = item.label
 
-        if item.accel != '':
-          pass
-          # menu_item.add_accelerator('activate', self.accel_group, Gdk.KEY_Q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE)
+        shortcut = parse_accel(item.accel)
+        if shortcut != None:
+          menu_item.add_accelerator('activate', self.accel_group, shortcut[1], shortcut[0], Gtk.AccelFlags.VISIBLE)
       else:
         # sub_menu
         current_prefix = item.path[self.depth]
@@ -155,119 +82,15 @@ class Menu(Gtk.Menu):
     menu_item.set_submenu(menu)
     return menu_item
 
-class CommandList(Gtk.ListBox):
-
-  menu_actions = GObject.Property(type=object)
-
-  def __init__(self, depth=0, *args, **kwargs):
-    super(Gtk.ListBox, self).__init__(*args, **kwargs)
-
-    self.menu_actions = self.get_property('menu-actions')
-    self.select_value = ''
-    self.filter_value = ''
-    self.visible_rows = []
-    self.selected_row = 0
-    self.selected_obj = None
-    self.depth = depth
-
-    self.set_sort_func(self.sort_function)
-    self.set_filter_func(self.filter_function)
-
-    self.connect('row-selected', self.on_row_selected)
-    self.connect('notify::menu-actions', self.on_menu_actions_notify)
-
-  def set_filter_value(self, value=None):
-    self.visible_rows = []
-    self.filter_value = normalize_string(value)
-
-    GLib.idle_add(self.invalidate_filter_value, priority=GLib.PRIORITY_LOW)
-
-  def invalidate_filter_value(self):
-    self.invalidate_filter()
-
-    GLib.idle_add(self.invalidate_sort, priority=GLib.PRIORITY_HIGH)
-    GLib.idle_add(self.invalidate_selection, priority=GLib.PRIORITY_LOW)
-
-  def invalidate_selection(self):
-    if bool(self.filter_value):
-      self.visible_rows = []
-      self.foreach(self.append_visible_row)
-    else:
-      self.visible_rows = self.get_children()
-
-    self.select_row_by_index(0)
-
-  def reset_selection_state(self, index):
-    if index == 0:
-      self.invalidate_selection()
-      return True
-
-  def append_visible_row(self, row):
-    if row.visibility():
-      self.visible_rows.append(row)
-      return True
-
-  def select_row_by_index(self, index):
-    if index in range(0, len(self.visible_rows)):
-      self.selected_row = index
-      self.selected_obj = self.visible_rows[index]
-
-      self.selected_obj.activate()
-
-  def get_last_row_index(self):
-    return len(self.visible_rows) - 1
-
-  def select_prev_row(self):
-    lastrow = self.get_last_row_index()
-    prevrow = self.selected_row - 1
-    prevrow = lastrow if prevrow < 0 else prevrow
-
-    self.select_row_by_index(prevrow)
-
-  def select_next_row(self):
-    lastrow = self.get_last_row_index()
-    nextrow = self.selected_row + 1
-    nextrow = 0 if nextrow > lastrow else nextrow
-
-    self.select_row_by_index(nextrow)
-
-  def sort_function(self, row1, row2):
-    score_diff = row1.position() - row2.position()
-    index_diff = row1.index - row2.index
-
-    return score_diff or index_diff
-
-  def filter_function(self, item):
-    item.set_property('query', self.filter_value)
-    return item.visibility()
-
-  def do_list_item(self, value, index):
-    command = CommandListItem(value=value, index=index, depth=self.depth)
-
-    self.append_visible_row(command)
-    self.add(command)
-
-  def do_list_items(self):
-    for index, value in enumerate(self.menu_actions):
-      self.do_list_item(value, index)
-      self.reset_selection_state(index)
-      yield True
-
-  def on_row_selected(self, listbox, item):
-    self.select_value = item.value if item else ''
-
-  def on_menu_actions_notify(self, *args):
-    self.visible_rows = []
-    self.foreach(lambda item: item.destroy())
-
-    run_generator(self.do_list_items)
-
 
 class CommandWindow(Gtk.ApplicationWindow):
 
   def __init__(self, *args, **kwargs):
     kwargs['type'] = Gtk.WindowType.POPUP
     super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
+    self.seat = Gdk.Display.get_default().get_default_seat()
+
+    self.keybinding_strings = []
 
     self.set_size_request(750, -1)
     self.set_keep_above(True)
@@ -282,29 +105,25 @@ class CommandWindow(Gtk.ApplicationWindow):
     self.set_destroy_with_parent(True)
 
     self.search_entry = Gtk.SearchEntry(hexpand=True, margin=2)
-    self.search_entry.connect('search-changed', self.on_search_entry_changed)
-    self.search_entry.connect('populate-popup', self.on_populate_popup)
     self.search_entry.set_has_frame(False)
 
     self.header_bar = Gtk.HeaderBar(spacing=0)
     self.header_bar.set_custom_title(self.search_entry)
 
-    self.menus = {}
     self.my_menu_bar = Gtk.MenuBar()
     self.item = Gtk.MenuItem()
     self.item.set_label('Options')
     self.item.set_accel_path('<MyApp>/Options')
     self.accel_group = Gtk.AccelGroup()
-    self.add_accel_group(self.accel_group)
+    #self.add_accel_group(self.accel_group)
     # self.item.set_property('action_name', 'app.quit')
     self.item2 = Gtk.MenuItem()
     self.item2.set_label('Kida long item _Next')
-    self.item2.set_property('action_name', 'app.next')
     self.item3 = Gtk.MenuItem()
     self.item3.set_use_underline(True)
     self.item3.set_label('_Salir')
-    self.item3.add_accelerator('activate', self.accel_group, Gdk.KEY_Q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE)
-    self.item3.set_accel_path('<MyApp>/Options/Salir')
+    # self.item3.add_accelerator('activate', self.accel_group, Gdk.KEY_Q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE)
+    #self.item3.set_accel_path('<MyApp>/Options/Salir')
     self.item3.set_property('action_name', 'app.quit')
     self.sub_menu = Gtk.Menu()
     self.sub_menu.append(self.item2)
@@ -314,36 +133,46 @@ class CommandWindow(Gtk.ApplicationWindow):
     self.my_menu_bar.append(self.item)
     # self.my_menu_bar.append(self.item2)
     # self.my_menu_bar.append('Salir', 'app.quit')
-    # self.my_menu_bar.append('Arriba', 'app.prev')
-    self.my_menu_bar.show_all()
 
-    # self.button = Gtk.MenuButton()
-    # self.button.set_popup(self.my_menu_bar)
-    # self.button.set_menu_model(self.menu_model)
-    
-    self.h_box = Gtk.Box()
-    # self.main_box = Gtk.Box()
-    # self.my_menu_bar.unparent()
-    # self.main_box.add(self.my_menu_bar)
+    # self.set_titlebar(self.header_bar)
 
-    self.set_titlebar(self.header_bar)
+    self.main_box = Gtk.VBox()
+    self.main_box.add(self.my_menu_bar)
 
-    # self.menu_bar = Gtk.MenuBar()
-    self.h_box.add(self.my_menu_bar)
-
-    self.add(self.h_box)
-    # self.add(self.main_box)
-    self.show_all()
-    self.set_dark_variation()
+    self.add(self.main_box)
+    # self.set_dark_variation()
     self.set_custom_styles()
 
     Gdk.event_handler_set(self.on_gdk_event)
+    self.menu_test = None
 
     self.connect('show', self.on_window_show)
     self.connect('button-press-event', self.on_button_press_event)
+    self.connect('enter_notify_event', self.on_enter_event)
+    self.connect('leave_notify_event', self.on_leave_event)
+
+  def remove_all_keybindings(self):
+    for k in self.keybinding_strings:
+      Keybinder.unbind_all(k)
+    self.keybinding_strings = []
+
+  def add_keybinding(self, menu):
+    label = menu.get_label()
+    i = label.find('_')
+    if i != -1:
+      acc = '<Alt>' + label[i + 1]
+      Keybinder.bind(acc, lambda accelerator: self.open_menu_shortcut(menu))
+
+  def open_menu_shortcut(self, menu):
+    self.make_opaque()
+    self.grab_keyboard(self.get_window())
+    self.my_menu_bar.select_item(menu) # activate_item(menu)
 
   def set_menu(self, menus):
-    # self.destroy_menus()
+    self.destroy_menus()
+    self.remove_all_keybindings()
+    if len(menus) == 0:
+      return
     current_prefix = menus[0].path[0]
     current_menu = []
     for item in menus:
@@ -361,14 +190,21 @@ class CommandWindow(Gtk.ApplicationWindow):
       return
     menu = Menu(current_menu, 1, self.accel_group)
     menu.show_all()
-    button = Gtk.MenuItem() # Menu()
-    button.set_label(name) # set_label(name)
+    if self.menu_test == None:
+      self.menu_test = menu
+    button = Gtk.MenuItem()
+    button.set_label(name)
+    self.add_keybinding(button)
+    button.set_use_underline(True)
     button.set_submenu(menu) # set_popup(menu)
     button.show_all()
+    button.set_can_focus(True)
     self.my_menu_bar.append(button)
-    # self.h_box.add(button)
-    # self.h_box.show_all()
 
+  def destroy_menus(self):
+    self.main_box.remove(self.my_menu_bar)
+    self.my_menu_bar = Gtk.MenuBar()
+    self.main_box.add(self.my_menu_bar)
 
   def set_custom_position(self):
     position = self.get_position()
@@ -396,11 +232,15 @@ class CommandWindow(Gtk.ApplicationWindow):
 
     inject_custom_style(self, styles)
 
-  def grab_keyboard(self, window, status, tstamp):
-    while Gdk.keyboard_grab(window, True, tstamp) != status:
+  def grab_keyboard(self, window, status=Gdk.GrabStatus.SUCCESS):
+    while self.seat.grab(window, Gdk.SeatCapabilities.KEYBOARD, False, None, None, None) != status:
       time.sleep(0.1)
 
-  def grab_pointer(self, window, status, tstamp):
+  def ungrab_keyboard(self):
+    self.seat.ungrab()
+
+  def grab_pointer(self, window, status=Gdk.GrabStatus.SUCCESS, tstamp=-1):
+    return
     mask = Gdk.EventMask.BUTTON_PRESS_MASK
 
     while Gdk.pointer_grab(window, True, mask, window, None, tstamp) != status:
@@ -408,8 +248,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 
   def emulate_focus_out_event(self):
     tstamp = Gdk.CURRENT_TIME
-    Gdk.keyboard_ungrab(tstamp)
-    Gdk.pointer_ungrab(tstamp)
+    self.seat.ungrab()
 
     fevent = Gdk.Event(Gdk.EventType.FOCUS_CHANGE)
     self.emit('focus-out-event', fevent)
@@ -422,21 +261,15 @@ class CommandWindow(Gtk.ApplicationWindow):
     return int(event.x) in x_range and int(event.y) in y_range
 
   def on_gdk_event(self, event):
-    if event.type is Gdk.EventType.FOCUS_CHANGE:
-      return
-
     Gtk.main_do_event(event)
 
   def on_window_show(self, window):
     window = self.get_window()
     status = Gdk.GrabStatus.SUCCESS
     tstamp = Gdk.CURRENT_TIME
-    self.set_show_menubar(True)
 
-    # self.grab_keyboard(window, status, tstamp)
+    self.grab_keyboard(window, status)
     # self.grab_pointer(window, status, tstamp)
-
-    self.search_entry.grab_focus()
 
   def on_button_press_event(self, widget, event):
     win_type = event.get_window().get_window_type()
@@ -446,35 +279,30 @@ class CommandWindow(Gtk.ApplicationWindow):
       self.emulate_focus_out_event()
       return True
 
-  def on_search_entry_changed(self, *args):
-    search_value = self.search_entry.get_text()
+  def make_opaque(self):
+    self.set_opacity(1)
 
-    self.scrolled_window.unset_placement()
-    self.command_list.set_filter_value(search_value)
+  def make_transparent(self):
+    self.set_opacity(0)
 
-  def on_populate_popup(self, entry, widget):
-    # contextual_menu = Gtk.Menu()
-    self.sub_item = Gtk.MenuItem(u'Item')
-    self.sub_item.set_label("Sub Menu")
-    # item = Gtk.MenuItem.submenu("Submenu", sub_item)
-    widget.append(self.sub_item)
-    # widget.get_children()[2].set_submenu(Gtk.Menu().append(self.sub_item))
-    widget.show_all()
-    widget.show()
-    # widget.prepend(Gtk.SeparatorMenuItem())
+  def on_enter_event(self, widget, event):
+    pass
+    #self.make_opaque()
 
-    # self.search_entry.do_populate_popup(self.contextual_menu)
+  def on_leave_event(self, widget, event):
+    pass
+    #self.make_transparent()
 
 class GlobalMenu(Gtk.Application):
 
   def __init__(self, *args, **kwargs):
-    kwargs['application_id'] = 'org.ddog.gnomeAppMenu'
+    kwargs['application_id'] = 'org.gonzaarcr.fildemapp'
     super(Gtk.Application, self).__init__(*args, **kwargs)
 
     self.dbus_menu = DbusMenu()
-    self.navigation = []
-    self.navigation_windows = []
+    self.dbus_menu.add_window_switch_listener(self.on_window_switched)
     self.actions = []
+    Keybinder.init()
 
     self.set_accels_for_action('app.quit', ['Escape'])
     self.set_accels_for_action('app.prev', ['Up'])
@@ -489,23 +317,19 @@ class GlobalMenu(Gtk.Application):
 
   def do_startup(self):
     Gtk.Application.do_startup(self)
+    self.window = CommandWindow(application=self, title='Gnome HUD')
     self.add_simple_action('start', self.on_show_window)
     self.add_simple_action('quit', self.on_hide_window)
-    self.add_simple_action('prev', self.on_prev_command)
-    self.add_simple_action('next', self.on_next_command)
     self.add_simple_action('execute', self.on_execute_command)
 
   def do_activate(self):
-    self.window = CommandWindow(application=self, title='Gnome HUD')
-    self.window.show_all()
+    self.remove_all_actions()
     ac = self.dbus_menu.actions
     for item in self.dbus_menu.items:
       self.add_menu_action(item.action, item.path, item.label)
     self.window.set_menu(self.dbus_menu.items)
-    self.window.connect('focus-out-event', self.on_hide_window)
-
-    # self.commands = self.window.command_list
-    # self.commands.connect_after('button-press-event', self.on_commands_click)
+    self.window.show_all()
+    # self.window.connect('focus-out-event', self.on_hide_window)
 
   def add_menu_action(self, name, path, label):
     '''
@@ -515,7 +339,7 @@ class GlobalMenu(Gtk.Application):
     name = str(name)
     self.actions.append(name)
     action = Gio.SimpleAction.new(name, None)
-    path = id = get_separator().join(path) + get_separator() + label
+    path = get_separator().join(path) + get_separator() + label
     callback = lambda a, b: self.dbus_menu.activate(path)
     action.connect('activate', callback)
     self.add_action(action)
@@ -526,22 +350,21 @@ class GlobalMenu(Gtk.Application):
     self.actions = []
 
   def on_show_window(self, *args):
+    print('GlobalMenu.on_show_window')
     self.window.show()
 
   def on_hide_window(self, *args):
     self.window.destroy()
     self.quit()
 
-  def on_prev_command(self, *args):
-    self.commands.select_prev_row()
-
-  def on_next_command(self, *args):
-    self.commands.select_next_row()
-
-  def on_commands_click(self, widget, event):
-    if event.type == Gdk.EventType._2BUTTON_PRESS:
-      self.on_execute_command()
-
   def on_execute_command(self, *args):
     self.dbus_menu.activate(self.commands.select_value)
     self.on_hide_window()
+
+  def on_window_switched(self):
+    print("switched")
+    self.window.remove_all_keybindings()
+    self.do_activate()
+
+  def menu_activated(self, menu):
+    print("menu activated: ", menu)
