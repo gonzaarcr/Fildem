@@ -362,7 +362,6 @@ class GlobalMenu(Gtk.Application):
     self.on_hide_window()
 
   def on_window_switched(self):
-    print("switched")
     self.window.remove_all_keybindings()
     self.do_activate()
 

@@ -1,12 +1,10 @@
 import gi
 import dbus
 
-gi.require_version('Bamf', '3')
-
 from gi.repository import Gio
-from gi.repository import Bamf
 
 from utils.fuzzy import match_replace
+from utils.window import WindowManager
 
 
 def format_label(parts):
@@ -159,79 +157,31 @@ class DbusAppMenu(object):
       self.actions[menu_item.text] = menu_item.action
       self.items.append(menu_item)
 
-class DummyWindow(object):
-  def __init__(self):
-    super(DummyWindow, self).__init__()
-    self.xid = 0
-    self.props = {}
-
-  def get_xid(self):
-    return self.xid
-
-  def set_xid(self, xid):
-    self.xid = xid
-
-  def get_utf8_prop(self, id):
-    return self.props[id] if id in self.props else None
-  
-  def set_utf8_prop(self, key, value):
-    self.props[key] = value
-
 class DbusMenu:
 
   def __init__(self):
     self.session = dbus.SessionBus()
-    self.window = DummyWindow()
+    self.window = WindowManager.new_window()
     self._init_window()
-    self.listen_chwindow_signal()
+    WindowManager.add_listener(self.on_window_switched)
     self._win_switch_listeners = []
 
   def _init_window(self):
-    self.matcher = Bamf.Matcher.get_default()
-    self.window  = self.matcher.get_active_window()
     self.appmenu = DbusAppMenu(self.session, self.window)
     self.gtkmenu = DbusGtkMenu(self.session, self.window)
-
-  def listen_chwindow_signal(self):
-    name = 'com.gonzaarcr.appmenu'
-    path = '/com/gonzaarcr/appmenu'
-    proxy  = self.session.get_object(name, path)
-    signal = proxy.connect_to_signal("WindowSwitchedSignal", self.window_switched)
-    #self.matcher.connect('active-window-changed', self.window_switched_bamf)
-
-  def window_switched(self, window_data):
-    '''
-    Listener on dbus WindowSwitched
-    '''
-    xid = window_data['xid'] if window_data['xid'] != '' else 0
-    self.window.set_xid(int(xid))
-    for p in window_data:
-      if p == 'xid':
-        continue
-      self.window.set_utf8_prop('_' + p.upper(), window_data[p])
-    self._init_window()
-    for cb in self._win_switch_listeners:
-      cb()
-
-  def window_switched_bamf(self, matcher, object, p0):
-    win = object if object != None else p0
-    '''
-    self._init_window()
-    for cb in self._win_switch_listeners:
-      cb()
-    '''
 
   def add_window_switch_listener(self, callback):
     self._win_switch_listeners.append(callback)
 
+  def on_window_switched(self, window):
+    self.window = window
+    self._init_window()
+    for cb in self._win_switch_listeners:
+      cb()
+
   @property
   def prompt(self):
-    return ''
-    app  = self.matcher.get_active_application()
-    file = app.get_desktop_file()
-    info = Gio.DesktopAppInfo.new_from_filename(file)
-
-    return info.get_string('Name')
+    return self.window.get_app_name()
 
   @property
   def actions(self):
