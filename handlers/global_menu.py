@@ -19,6 +19,7 @@ from utils.fuzzy import FuzzyMatch
 from utils.fuzzy import normalize_string
 from utils.fuzzy import match_replace
 from utils.shortcut_decoder import parse_accel
+from utils.appindicator import AppIndicator
 
 def get_separator():
   return u'\u0020\u0020\u00BB\u0020\u0020'
@@ -143,8 +144,11 @@ class CommandWindow(Gtk.ApplicationWindow):
     # self.set_dark_variation()
     self.set_custom_styles()
 
+    self.indicator_builder = []
+
     Gdk.event_handler_set(self.on_gdk_event)
     self.menu_test = None
+    self.indicator_manager = AppIndicator([])
 
     self.connect('show', self.on_window_show)
     self.connect('button-press-event', self.on_button_press_event)
@@ -171,6 +175,7 @@ class CommandWindow(Gtk.ApplicationWindow):
   def set_menu(self, menus):
     self.destroy_menus()
     self.remove_all_keybindings()
+    self.indicator_manager.hide_all()
     if len(menus) == 0:
       return
     current_prefix = menus[0].path[0]
@@ -185,11 +190,15 @@ class CommandWindow(Gtk.ApplicationWindow):
     else:
       self.create_menu(current_prefix, current_menu)
 
+    self.indicator_manager = AppIndicator(self.indicator_builder)
+    self.indicator_builder = []
+
   def create_menu(self, name, current_menu):
     if len(current_menu) == 0:
       return
     menu = Menu(current_menu, 1, self.accel_group)
     menu.show_all()
+    self.indicator_builder.append({'menu': menu, 'label': name})
     if self.menu_test == None:
       self.menu_test = menu
     button = Gtk.MenuItem()
