@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 import gi
+import dbus
 
 gi.require_version('Keybinder', '3.0')
 
@@ -15,26 +16,24 @@ BUS_NAME = 'com.gonzaarcr.appmenu'
 
 
 def run_keybinder(callback):
-  Keybinder.init()
-  Keybinder.bind('<Ctrl><Alt>space', callback)
-  # for wayland
-  DBusGMainLoop(set_as_default=True)
-  #GLib.timeout_add_seconds(1, callback)
-  try:
-    GLib.MainLoop().run()
-  except KeyboardInterrupt:
-    GLib.MainLoop().quit()
+	Keybinder.init()
+	Keybinder.bind('<Ctrl><Alt>space', callback)
+	# for wayland
+	DBusGMainLoop(set_as_default=True)
+	#GLib.timeout_add_seconds(1, callback)
+	try:
+		GLib.MainLoop().run()
+	except KeyboardInterrupt:
+		GLib.MainLoop().quit()
 
-def wayland():
-  import dbus
 
 def main():
-  run_keybinder(default_hud_menu)
+	run_keybinder(default_hud_menu)
 
 
 def rofi():
-  run_keybinder(rofi_hud_menu)
+	run_keybinder(rofi_hud_menu)
 
 
 if __name__ == "__main__":
-  main()
+	main()

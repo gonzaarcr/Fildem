@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 
+# IntelliJ
+.idea/
+
 # Sublime project stuff
 *.sublime-project
 *.sublime-workspace

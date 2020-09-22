@@ -17,505 +17,505 @@ from utils.fuzzy import match_replace
 
 
 def normalize_markup(text):
-  return text.replace('&', '&amp;')
+	return text.replace('&', '&amp;')
 
 
 def run_generator(function):
-  priority  = GLib.PRIORITY_LOW
-  generator = function()
+	priority  = GLib.PRIORITY_LOW
+	generator = function()
 
-  GLib.idle_add(lambda: next(generator, False), priority=priority)
+	GLib.idle_add(lambda: next(generator, False), priority=priority)
 
 
 def inject_custom_style(widget, style_string):
-  provider = Gtk.CssProvider()
-  provider.load_from_data(style_string.encode())
+	provider = Gtk.CssProvider()
+	provider.load_from_data(style_string.encode())
 
-  screen   = Gdk.Screen.get_default()
-  priority = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-  Gtk.StyleContext.add_provider_for_screen(screen, provider, priority)
+	screen   = Gdk.Screen.get_default()
+	priority = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+	Gtk.StyleContext.add_provider_for_screen(screen, provider, priority)
 
 
 def add_style_class(widget, class_names):
-  context = widget.get_style_context()
-  context.add_class(class_names)
+	context = widget.get_style_context()
+	context.add_class(class_names)
 
 
 class CommandListItem(Gtk.ListBoxRow):
 
-  value = GObject.Property(type=str)
-  index = GObject.Property(type=int)
-  query = GObject.Property(type=str)
+	value = GObject.Property(type=str)
+	index = GObject.Property(type=int)
+	query = GObject.Property(type=str)
 
-  def __init__(self, *args, **kwargs):
-    super(Gtk.ListBoxRow, self).__init__(*args, **kwargs)
+	def __init__(self, *args, **kwargs):
+		super(Gtk.ListBoxRow, self).__init__(*args, **kwargs)
 
-    self.set_can_focus(False)
+		self.set_can_focus(False)
 
-    self.query = self.get_property('query')
-    self.value = self.get_property('value')
-    self.index = self.get_property('index')
-    self.fuzzy = FuzzyMatch(text=self.value)
+		self.query = self.get_property('query')
+		self.value = self.get_property('value')
+		self.index = self.get_property('index')
+		self.fuzzy = FuzzyMatch(text=self.value)
 
-    self.label = Gtk.Label(margin=6, margin_left=10, margin_right=10)
-    self.label.set_justify(Gtk.Justification.LEFT)
-    self.label.set_halign(Gtk.Align.START)
+		self.label = Gtk.Label(margin=6, margin_left=10, margin_right=10)
+		self.label.set_justify(Gtk.Justification.LEFT)
+		self.label.set_halign(Gtk.Align.START)
 
-    self.connect('notify::query', self.on_query_notify)
+		self.connect('notify::query', self.on_query_notify)
 
-    self.add(self.label)
-    self.set_label(self.value)
+		self.add(self.label)
+		self.set_label(self.value)
 
-    self.show_all()
+		self.show_all()
 
-  def get_label(self):
-    return self.label.get_label()
+	def get_label(self):
+		return self.label.get_label()
 
-  def set_label(self, text):
-    self.label.set_label(normalize_markup(text))
+	def set_label(self, text):
+		self.label.set_label(normalize_markup(text))
 
-  def set_markup(self, markup):
-    self.label.set_markup(normalize_markup(markup))
+	def set_markup(self, markup):
+		self.label.set_markup(normalize_markup(markup))
 
-  def position(self):
-    return self.fuzzy.score if bool(self.query) else -1
+	def position(self):
+		return self.fuzzy.score if bool(self.query) else -1
 
-  def visibility(self):
-    return self.fuzzy.score > -1 if bool(self.query) else True
+	def visibility(self):
+		return self.fuzzy.score > -1 if bool(self.query) else True
 
-  def highlight_match(self, match):
-    return '<u><b>%s</b></u>' % match.group(0)
+	def highlight_match(self, match):
+		return '<u><b>%s</b></u>' % match.group(0)
 
-  def highlight_matches(self):
-    words = self.query.replace(' ', '|')
-    value = match_replace(words, self.highlight_match, self.value)
+	def highlight_matches(self):
+		words = self.query.replace(' ', '|')
+		value = match_replace(words, self.highlight_match, self.value)
 
-    self.set_markup(value)
+		self.set_markup(value)
 
-  def do_label_markup(self):
-    if bool(self.query):
-      self.highlight_matches()
+	def do_label_markup(self):
+		if bool(self.query):
+			self.highlight_matches()
 
-    elif '<u>' in self.get_label():
-      self.set_label(self.value)
+		elif '<u>' in self.get_label():
+			self.set_label(self.value)
 
-  def on_query_notify(self, *args):
-    self.fuzzy.set_query(self.query)
+	def on_query_notify(self, *args):
+		self.fuzzy.set_query(self.query)
 
-    if self.visibility():
-      GLib.idle_add(self.do_label_markup, priority=GLib.PRIORITY_HIGH_IDLE)
+		if self.visibility():
+			GLib.idle_add(self.do_label_markup, priority=GLib.PRIORITY_HIGH_IDLE)
 
 
 class CommandList(Gtk.ListBox):
 
-  menu_actions = GObject.Property(type=object)
+	menu_actions = GObject.Property(type=object)
 
-  def __init__(self, *args, **kwargs):
-    super(Gtk.ListBox, self).__init__(*args, **kwargs)
+	def __init__(self, *args, **kwargs):
+		super(Gtk.ListBox, self).__init__(*args, **kwargs)
 
-    self.menu_actions = self.get_property('menu-actions')
-    self.select_value = ''
-    self.filter_value = ''
-    self.visible_rows = []
-    self.selected_row = 0
-    self.selected_obj = None
+		self.menu_actions = self.get_property('menu-actions')
+		self.select_value = ''
+		self.filter_value = ''
+		self.visible_rows = []
+		self.selected_row = 0
+		self.selected_obj = None
 
-    self.set_sort_func(self.sort_function)
-    self.set_filter_func(self.filter_function)
+		self.set_sort_func(self.sort_function)
+		self.set_filter_func(self.filter_function)
 
-    self.connect('row-selected', self.on_row_selected)
-    self.connect('notify::menu-actions', self.on_menu_actions_notify)
+		self.connect('row-selected', self.on_row_selected)
+		self.connect('notify::menu-actions', self.on_menu_actions_notify)
 
-  def set_filter_value(self, value=None):
-    self.visible_rows = []
-    self.filter_value = normalize_string(value)
+	def set_filter_value(self, value=None):
+		self.visible_rows = []
+		self.filter_value = normalize_string(value)
 
-    GLib.idle_add(self.invalidate_filter_value, priority=GLib.PRIORITY_LOW)
+		GLib.idle_add(self.invalidate_filter_value, priority=GLib.PRIORITY_LOW)
 
-  def invalidate_filter_value(self):
-    self.invalidate_filter()
+	def invalidate_filter_value(self):
+		self.invalidate_filter()
 
-    GLib.idle_add(self.invalidate_sort, priority=GLib.PRIORITY_HIGH)
-    GLib.idle_add(self.invalidate_selection, priority=GLib.PRIORITY_LOW)
+		GLib.idle_add(self.invalidate_sort, priority=GLib.PRIORITY_HIGH)
+		GLib.idle_add(self.invalidate_selection, priority=GLib.PRIORITY_LOW)
 
-  def invalidate_selection(self):
-    if bool(self.filter_value):
-      self.visible_rows = []
-      self.foreach(self.append_visible_row)
-    else:
-      self.visible_rows = self.get_children()
+	def invalidate_selection(self):
+		if bool(self.filter_value):
+			self.visible_rows = []
+			self.foreach(self.append_visible_row)
+		else:
+			self.visible_rows = self.get_children()
 
-    self.select_row_by_index(0)
+		self.select_row_by_index(0)
 
-  def reset_selection_state(self, index):
-    if index == 0:
-      self.invalidate_selection()
-      return True
+	def reset_selection_state(self, index):
+		if index == 0:
+			self.invalidate_selection()
+			return True
 
-  def append_visible_row(self, row):
-    if row.visibility():
-      self.visible_rows.append(row)
-      return True
+	def append_visible_row(self, row):
+		if row.visibility():
+			self.visible_rows.append(row)
+			return True
 
-  def select_row_by_index(self, index):
-    if index in range(0, len(self.visible_rows)):
-      self.selected_row = index
-      self.selected_obj = self.visible_rows[index]
+	def select_row_by_index(self, index):
+		if index in range(0, len(self.visible_rows)):
+			self.selected_row = index
+			self.selected_obj = self.visible_rows[index]
 
-      self.selected_obj.activate()
+			self.selected_obj.activate()
 
-  def get_last_row_index(self):
-    return len(self.visible_rows) - 1
+	def get_last_row_index(self):
+		return len(self.visible_rows) - 1
 
-  def select_prev_row(self):
-    lastrow = self.get_last_row_index()
-    prevrow = self.selected_row - 1
-    prevrow = lastrow if prevrow < 0 else prevrow
+	def select_prev_row(self):
+		lastrow = self.get_last_row_index()
+		prevrow = self.selected_row - 1
+		prevrow = lastrow if prevrow < 0 else prevrow
 
-    self.select_row_by_index(prevrow)
+		self.select_row_by_index(prevrow)
 
-  def select_next_row(self):
-    lastrow = self.get_last_row_index()
-    nextrow = self.selected_row + 1
-    nextrow = 0 if nextrow > lastrow else nextrow
+	def select_next_row(self):
+		lastrow = self.get_last_row_index()
+		nextrow = self.selected_row + 1
+		nextrow = 0 if nextrow > lastrow else nextrow
 
-    self.select_row_by_index(nextrow)
+		self.select_row_by_index(nextrow)
 
-  def sort_function(self, row1, row2):
-    score_diff = row1.position() - row2.position()
-    index_diff = row1.index - row2.index
+	def sort_function(self, row1, row2):
+		score_diff = row1.position() - row2.position()
+		index_diff = row1.index - row2.index
 
-    return score_diff or index_diff
+		return score_diff or index_diff
 
-  def filter_function(self, item):
-    item.set_property('query', self.filter_value)
-    return item.visibility()
+	def filter_function(self, item):
+		item.set_property('query', self.filter_value)
+		return item.visibility()
 
-  def do_list_item(self, value, index):
-    command = CommandListItem(value=value, index=index)
+	def do_list_item(self, value, index):
+		command = CommandListItem(value=value, index=index)
 
-    self.append_visible_row(command)
-    self.add(command)
+		self.append_visible_row(command)
+		self.add(command)
 
-  def do_list_items(self):
-    for index, value in enumerate(self.menu_actions):
-      self.do_list_item(value, index)
-      self.reset_selection_state(index)
-      yield True
+	def do_list_items(self):
+		for index, value in enumerate(self.menu_actions):
+			self.do_list_item(value, index)
+			self.reset_selection_state(index)
+			yield True
 
-  def on_row_selected(self, listbox, item):
-    self.select_value = item.value if item else ''
+	def on_row_selected(self, listbox, item):
+		self.select_value = item.value if item else ''
 
-  def on_menu_actions_notify(self, *args):
-    self.visible_rows = []
-    self.foreach(lambda item: item.destroy())
+	def on_menu_actions_notify(self, *args):
+		self.visible_rows = []
+		self.foreach(lambda item: item.destroy())
 
-    run_generator(self.do_list_items)
+		run_generator(self.do_list_items)
 
 
 class CommandWindow(Gtk.ApplicationWindow):
 
-  def __init__(self, *args, **kwargs):
-    kwargs['type'] = Gtk.WindowType.POPUP
-    super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
+	def __init__(self, *args, **kwargs):
+		kwargs['type'] = Gtk.WindowType.POPUP
+		super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
 
-    self.set_size_request(750, -1)
-    self.set_keep_above(True)
-    self.set_resizable(False)
+		self.set_size_request(750, -1)
+		self.set_keep_above(True)
+		self.set_resizable(False)
 
-    self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
-    self.set_position(Gtk.WindowPosition.CENTER)
-    self.set_custom_position()
+		self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
+		self.set_position(Gtk.WindowPosition.CENTER)
+		self.set_custom_position()
 
-    self.set_skip_pager_hint(True)
-    self.set_skip_taskbar_hint(True)
-    self.set_destroy_with_parent(True)
+		self.set_skip_pager_hint(True)
+		self.set_skip_taskbar_hint(True)
+		self.set_destroy_with_parent(True)
 
-    self.empty_label = Gtk.Label(margin=12)
-    self.empty_label.set_label('No menu actions available!')
+		self.empty_label = Gtk.Label(margin=12)
+		self.empty_label.set_label('No menu actions available!')
 
-    self.empty_box = Gtk.Box(sensitive=False)
-    self.empty_box.set_size_request(750, -1)
-    self.empty_box.add(self.empty_label)
+		self.empty_box = Gtk.Box(sensitive=False)
+		self.empty_box.set_size_request(750, -1)
+		self.empty_box.add(self.empty_label)
 
-    self.command_list = CommandList()
-    self.command_list.invalidate_selection()
+		self.command_list = CommandList()
+		self.command_list.invalidate_selection()
 
-    self.search_entry = Gtk.SearchEntry(hexpand=True, margin=2)
-    self.search_entry.connect('search-changed', self.on_search_entry_changed)
-    self.search_entry.set_has_frame(False)
+		self.search_entry = Gtk.SearchEntry(hexpand=True, margin=2)
+		self.search_entry.connect('search-changed', self.on_search_entry_changed)
+		self.search_entry.set_has_frame(False)
 
-    self.scrolled_window = Gtk.ScrolledWindow(hadjustment=None, vadjustment=None)
-    self.scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-    self.scrolled_window.set_size_request(750, 210)
-    self.scrolled_window.add(self.command_list)
+		self.scrolled_window = Gtk.ScrolledWindow(hadjustment=None, vadjustment=None)
+		self.scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+		self.scrolled_window.set_size_request(750, 210)
+		self.scrolled_window.add(self.command_list)
 
-    self.header_bar = Gtk.HeaderBar(spacing=0)
-    self.header_bar.set_custom_title(self.search_entry)
+		self.header_bar = Gtk.HeaderBar(spacing=0)
+		self.header_bar.set_custom_title(self.search_entry)
 
-    self.main_box = Gtk.Box()
-    self.main_box.add(self.empty_box)
-    self.main_box.add(self.scrolled_window)
+		self.main_box = Gtk.Box()
+		self.main_box.add(self.empty_box)
+		self.main_box.add(self.scrolled_window)
 
-    self.set_titlebar(self.header_bar)
-    self.add(self.main_box)
+		self.set_titlebar(self.header_bar)
+		self.add(self.main_box)
 
-    self.set_dark_variation()
-    self.set_custom_styles()
+		self.set_dark_variation()
+		self.set_custom_styles()
 
-    Gdk.event_handler_set(self.on_gdk_event)
+		Gdk.event_handler_set(self.on_gdk_event)
 
-    self.connect('show', self.on_window_show)
-    self.connect('button-press-event', self.on_button_press_event)
+		self.connect('show', self.on_window_show)
+		self.connect('button-press-event', self.on_button_press_event)
 
-  def set_menu_actions(self, actions):
-    if actions:
-      self.empty_box.hide()
-      self.scrolled_window.show()
+	def set_menu_actions(self, actions):
+		if actions:
+			self.empty_box.hide()
+			self.scrolled_window.show()
 
-      self.command_list.set_property('menu-actions', actions)
-    else:
-      self.scrolled_window.hide()
-      self.empty_box.show()
+			self.command_list.set_property('menu-actions', actions)
+		else:
+			self.scrolled_window.hide()
+			self.empty_box.show()
 
-  def set_custom_position(self):
-    position = self.get_position()
-    self.move(position.root_x, 32)
+	def set_custom_position(self):
+		position = self.get_position()
+		self.move(position.root_x, 32)
 
-  def set_dark_variation(self):
-    settings = Gtk.Settings.get_default()
-    settings.set_property('gtk-application-prefer-dark-theme', True)
+	def set_dark_variation(self):
+		settings = Gtk.Settings.get_default()
+		settings.set_property('gtk-application-prefer-dark-theme', True)
 
-  def set_custom_styles(self):
-    styles = """entry.search.flat { border: 0; outline: 0;
-      border-image: none; box-shadow: none; }
+	def set_custom_styles(self):
+		styles = """entry.search.flat { border: 0; outline: 0;
+			border-image: none; box-shadow: none; }
 
-      headerbar { box-shadow: none; background: @insensitive_bg_color;
-        border-radius: 0; border-width: 0 0 1px 0; }
+			headerbar { box-shadow: none; background: @insensitive_bg_color;
+				border-radius: 0; border-width: 0 0 1px 0; }
 
-      scrolledwindow overshoot, scrolledwindow undershoot {
-        background: none; box-shadow: none; }
+			scrolledwindow overshoot, scrolledwindow undershoot {
+				background: none; box-shadow: none; }
 
-      scrollbar { opacity: 0; }
+			scrollbar { opacity: 0; }
 
-      window decoration { box-shadow: none; border-color: @borders;
-        border-style: solid; border-width: 1px; border-radius: 0; }
-    """
+			window decoration { box-shadow: none; border-color: @borders;
+				border-style: solid; border-width: 1px; border-radius: 0; }
+		"""
 
-    inject_custom_style(self, styles)
+		inject_custom_style(self, styles)
 
-  def grab_keyboard(self, window, status, tstamp):
-    while Gdk.keyboard_grab(window, True, tstamp) != status:
-      time.sleep(0.1)
+	def grab_keyboard(self, window, status, tstamp):
+		while Gdk.keyboard_grab(window, True, tstamp) != status:
+			time.sleep(0.1)
 
-  def grab_pointer(self, window, status, tstamp):
-    mask = Gdk.EventMask.BUTTON_PRESS_MASK
+	def grab_pointer(self, window, status, tstamp):
+		mask = Gdk.EventMask.BUTTON_PRESS_MASK
 
-    while Gdk.pointer_grab(window, True, mask, window, None, tstamp) != status:
-      time.sleep(0.1)
+		while Gdk.pointer_grab(window, True, mask, window, None, tstamp) != status:
+			time.sleep(0.1)
 
-  def emulate_focus_out_event(self):
-    tstamp = Gdk.CURRENT_TIME
-    Gdk.keyboard_ungrab(tstamp)
-    Gdk.pointer_ungrab(tstamp)
+	def emulate_focus_out_event(self):
+		tstamp = Gdk.CURRENT_TIME
+		Gdk.keyboard_ungrab(tstamp)
+		Gdk.pointer_ungrab(tstamp)
 
-    fevent = Gdk.Event(Gdk.EventType.FOCUS_CHANGE)
-    self.emit('focus-out-event', fevent)
+		fevent = Gdk.Event(Gdk.EventType.FOCUS_CHANGE)
+		self.emit('focus-out-event', fevent)
 
-  def clicked_inside(self, event):
-    size    = self.get_size()
-    x_range = range(0, size.width)
-    y_range = range(0, size.height)
+	def clicked_inside(self, event):
+		size    = self.get_size()
+		x_range = range(0, size.width)
+		y_range = range(0, size.height)
 
-    return int(event.x) in x_range and int(event.y) in y_range
+		return int(event.x) in x_range and int(event.y) in y_range
 
-  def on_gdk_event(self, event):
-    Gtk.main_do_event(event)
+	def on_gdk_event(self, event):
+		Gtk.main_do_event(event)
 
-  def on_window_show(self, window):
-    window = self.get_window()
-    status = Gdk.GrabStatus.SUCCESS
-    tstamp = Gdk.CURRENT_TIME
+	def on_window_show(self, window):
+		window = self.get_window()
+		status = Gdk.GrabStatus.SUCCESS
+		tstamp = Gdk.CURRENT_TIME
 
-    self.grab_keyboard(window, status, tstamp)
-    self.grab_pointer(window, status, tstamp)
+		self.grab_keyboard(window, status, tstamp)
+		self.grab_pointer(window, status, tstamp)
 
-    self.search_entry.grab_focus()
+		self.search_entry.grab_focus()
 
-  def on_button_press_event(self, widget, event):
-    win_type = event.get_window().get_window_type()
-    tmp_type = Gdk.WindowType.TEMP
+	def on_button_press_event(self, widget, event):
+		win_type = event.get_window().get_window_type()
+		tmp_type = Gdk.WindowType.TEMP
 
-    if win_type == tmp_type and not self.clicked_inside(event):
-      self.emulate_focus_out_event()
-      return True
+		if win_type == tmp_type and not self.clicked_inside(event):
+			self.emulate_focus_out_event()
+			return True
 
-  def on_search_entry_changed(self, *args):
-    search_value = self.search_entry.get_text()
+	def on_search_entry_changed(self, *args):
+		search_value = self.search_entry.get_text()
 
-    self.scrolled_window.unset_placement()
-    self.command_list.set_filter_value(search_value)
+		self.scrolled_window.unset_placement()
+		self.command_list.set_filter_value(search_value)
 
 class CommandListWindow(Gtk.ApplicationWindow):
 
-  def __init__(self, x_pos=-1, y_pos=-1, *args, **kwargs):
-    kwargs['type'] = Gtk.WindowType.POPUP
-    super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
+	def __init__(self, x_pos=-1, y_pos=-1, *args, **kwargs):
+		kwargs['type'] = Gtk.WindowType.POPUP
+		super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
 
-    self.set_size_request(750, -1)
-    self.set_keep_above(True)
-    self.set_resizable(False)
+		self.set_size_request(750, -1)
+		self.set_keep_above(True)
+		self.set_resizable(False)
 
-    self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
-    self.set_custom_position(x_pos, y_pos)
+		self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
+		self.set_custom_position(x_pos, y_pos)
 
-    self.command_list = CommandList()
-    self.command_list.invalidate_selection()
+		self.command_list = CommandList()
+		self.command_list.invalidate_selection()
 
-    self.scrolled_window = Gtk.ScrolledWindow(hadjustment=None, vadjustment=None)
-    self.scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-    self.scrolled_window.set_size_request(750, 110)
-    self.scrolled_window.add(self.command_list)
-    
-    self.set_skip_pager_hint(True)
-    self.set_skip_taskbar_hint(True)
-    self.set_destroy_with_parent(True)
+		self.scrolled_window = Gtk.ScrolledWindow(hadjustment=None, vadjustment=None)
+		self.scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+		self.scrolled_window.set_size_request(750, 110)
+		self.scrolled_window.add(self.command_list)
+		
+		self.set_skip_pager_hint(True)
+		self.set_skip_taskbar_hint(True)
+		self.set_destroy_with_parent(True)
 
-    self.main_box = Gtk.Box()
-    self.main_box.add(self.scrolled_window)
+		self.main_box = Gtk.Box()
+		self.main_box.add(self.scrolled_window)
 
-    self.add(self.main_box)
-    self.connect('show', self.on_window_show)
+		self.add(self.main_box)
+		self.connect('show', self.on_window_show)
 
-  def set_custom_position(self, x_pos, y_pos):
-    self.move(x_pos, y_pos)
+	def set_custom_position(self, x_pos, y_pos):
+		self.move(x_pos, y_pos)
 
-  def set_menu_actions(self, actions):
-    if actions:
-      self.scrolled_window.show()
-      self.command_list.set_property('menu-actions', actions)
+	def set_menu_actions(self, actions):
+		if actions:
+			self.scrolled_window.show()
+			self.command_list.set_property('menu-actions', actions)
 
-  def on_window_show(self, window):
-    window = self.get_window()
-    status = Gdk.GrabStatus.SUCCESS
-    tstamp = Gdk.CURRENT_TIME
+	def on_window_show(self, window):
+		window = self.get_window()
+		status = Gdk.GrabStatus.SUCCESS
+		tstamp = Gdk.CURRENT_TIME
 
-    # self.grab_keyboard(window, status, tstamp)
-    # self.grab_pointer(window, status, tstamp)
+		# self.grab_keyboard(window, status, tstamp)
+		# self.grab_pointer(window, status, tstamp)
 
-    self.command_list.grab_focus()
+		self.command_list.grab_focus()
 
-  def grab_keyboard(self, window, status, tstamp):
-    while Gdk.keyboard_grab(window, True, tstamp) != status:
-      time.sleep(0.1)
+	def grab_keyboard(self, window, status, tstamp):
+		while Gdk.keyboard_grab(window, True, tstamp) != status:
+			time.sleep(0.1)
 
-  def grab_pointer(self, window, status, tstamp):
-    mask = Gdk.EventMask.BUTTON_PRESS_MASK
+	def grab_pointer(self, window, status, tstamp):
+		mask = Gdk.EventMask.BUTTON_PRESS_MASK
 
-  def filter_values(self, prefix):
-    self.command_list.set_filter_value(prefix)
+	def filter_values(self, prefix):
+		self.command_list.set_filter_value(prefix)
 
 class HudMenu(Gtk.Application):
 
-  def __init__(self, *args, **kwargs):
-    kwargs['application_id'] = 'org.hardpixel.gnomeHUD'
-    super(Gtk.Application, self).__init__(*args, **kwargs)
+	def __init__(self, *args, **kwargs):
+		kwargs['application_id'] = 'org.hardpixel.gnomeHUD'
+		super(Gtk.Application, self).__init__(*args, **kwargs)
 
-    self.dbus_menu = DbusMenu()
-    self.navigation = []
-    self.navigation_windows = []
+		self.dbus_menu = DbusMenu()
+		self.navigation = []
+		self.navigation_windows = []
 
-    self.set_accels_for_action('app.quit', ['Escape'])
-    self.set_accels_for_action('app.prev', ['Up'])
-    self.set_accels_for_action('app.next', ['Down'])
-    self.set_accels_for_action('app.down', ['Right'])
-    self.set_accels_for_action('app.up', ['Left'])
-    self.set_accels_for_action('app.execute', ['Return'])
+		self.set_accels_for_action('app.quit', ['Escape'])
+		self.set_accels_for_action('app.prev', ['Up'])
+		self.set_accels_for_action('app.next', ['Down'])
+		self.set_accels_for_action('app.down', ['Right'])
+		self.set_accels_for_action('app.up', ['Left'])
+		self.set_accels_for_action('app.execute', ['Return'])
 
-  def add_simple_action(self, name, callback):
-    action = Gio.SimpleAction.new(name, None)
+	def add_simple_action(self, name, callback):
+		action = Gio.SimpleAction.new(name, None)
 
-    action.connect('activate', callback)
-    self.add_action(action)
+		action.connect('activate', callback)
+		self.add_action(action)
 
-  def do_startup(self):
-    Gtk.Application.do_startup(self)
-    self.add_simple_action('start', self.on_show_window)
-    self.add_simple_action('quit', self.on_hide_window)
-    self.add_simple_action('prev', self.on_prev_command)
-    self.add_simple_action('next', self.on_next_command)
-    self.add_simple_action('up', self.on_up_tree_command)
-    self.add_simple_action('down', self.on_down_tree_command)
-    self.add_simple_action('execute', self.on_execute_command)
+	def do_startup(self):
+		Gtk.Application.do_startup(self)
+		self.add_simple_action('start', self.on_show_window)
+		self.add_simple_action('quit', self.on_hide_window)
+		self.add_simple_action('prev', self.on_prev_command)
+		self.add_simple_action('next', self.on_next_command)
+		self.add_simple_action('up', self.on_up_tree_command)
+		self.add_simple_action('down', self.on_down_tree_command)
+		self.add_simple_action('execute', self.on_execute_command)
 
-  def do_activate(self):
-    self.window = CommandWindow(application=self, title='Gnome HUD')
-    self.window.show_all()
-    self.window.set_menu_actions(self.dbus_menu.actions)
-    self.window.connect('focus-out-event', self.on_hide_window)
+	def do_activate(self):
+		self.window = CommandWindow(application=self, title='Gnome HUD')
+		self.window.show_all()
+		self.window.set_menu_actions(self.dbus_menu.actions)
+		self.window.connect('focus-out-event', self.on_hide_window)
 
-    self.commands = self.window.command_list
-    self.commands.connect_after('button-press-event', self.on_commands_click)
+		self.commands = self.window.command_list
+		self.commands.connect_after('button-press-event', self.on_commands_click)
 
-  def on_show_window(self, *args):
-    self.window.show()
+	def on_show_window(self, *args):
+		self.window.show()
 
-  def on_hide_window(self, *args):
-    self.window.destroy()
-    self.quit()
+	def on_hide_window(self, *args):
+		self.window.destroy()
+		self.quit()
 
-  def on_prev_command(self, *args):
-    self.commands.select_prev_row()
+	def on_prev_command(self, *args):
+		self.commands.select_prev_row()
 
-  def on_next_command(self, *args):
-    self.commands.select_next_row()
+	def on_next_command(self, *args):
+		self.commands.select_next_row()
 
-  def on_up_tree_command(self, *args):
-    if len(self.navigation_windows) == 0:
-      return
+	def on_up_tree_command(self, *args):
+		if len(self.navigation_windows) == 0:
+			return
 
-    window = self.navigation_windows.pop()
-    window.destroy()
+		window = self.navigation_windows.pop()
+		window.destroy()
 
-  def on_down_tree_command(self, *args):
-    separator = u'\u0020\u0020\u00BB\u0020\u0020'
-    children = self.window.command_list.get_children()
-    position = self.window.command_list.get_selected_row()
-    vadjustment = self.window.scrolled_window.get_property('vadjustment')
-    print('{} {} {} {} {} {}'.format(
-      vadjustment.get_lower(),
-      vadjustment.get_page_increment(),
-      vadjustment.get_page_size(),
-      vadjustment.get_step_increment(),
-      vadjustment.get_upper(),
-      vadjustment.get_value()))
+	def on_down_tree_command(self, *args):
+		separator = u'\u0020\u0020\u00BB\u0020\u0020'
+		children = self.window.command_list.get_children()
+		position = self.window.command_list.get_selected_row()
+		vadjustment = self.window.scrolled_window.get_property('vadjustment')
+		print('{} {} {} {} {} {}'.format(
+			vadjustment.get_lower(),
+			vadjustment.get_page_increment(),
+			vadjustment.get_page_size(),
+			vadjustment.get_step_increment(),
+			vadjustment.get_upper(),
+			vadjustment.get_value()))
 
-    item_height = vadjustment.get_upper() / len(children)
-    for i in range(len(children)):
-      if children[i] is position:
-        break
+		item_height = vadjustment.get_upper() / len(children)
+		for i in range(len(children)):
+			if children[i] is position:
+				break
 
-    print("position: %s/%s height: %f" % (i, len(children), item_height))
-    height_new_window = 32 + i * item_height - vadjustment.get_value() # TODO height of search bar
-    sub_window = CommandListWindow(self.window.get_position().root_x, height_new_window, application=self)
-    sub_window.show_all()
-    sub_window.show()
+		print("position: %s/%s height: %f" % (i, len(children), item_height))
+		height_new_window = 32 + i * item_height - vadjustment.get_value() # TODO height of search bar
+		sub_window = CommandListWindow(self.window.get_position().root_x, height_new_window, application=self)
+		sub_window.show_all()
+		sub_window.show()
 
-    selected = self.commands.select_value.split(separator)[0]
-    self.navigation.append(selected)
+		selected = self.commands.select_value.split(separator)[0]
+		self.navigation.append(selected)
 
-    sub_window.set_menu_actions(self.dbus_menu.actions)
-    sub_window.filter_values(separator.join(self.navigation))
-    # sub_window.connect('focus-out-event', self.on_hide_window)
-    self.navigation_windows.append(sub_window)
+		sub_window.set_menu_actions(self.dbus_menu.actions)
+		sub_window.filter_values(separator.join(self.navigation))
+		# sub_window.connect('focus-out-event', self.on_hide_window)
+		self.navigation_windows.append(sub_window)
 
-    # sub_commands = self.window.command_list
-    # sub_commands.connect_after('button-press-event', self.on_commands_click)
+		# sub_commands = self.window.command_list
+		# sub_commands.connect_after('button-press-event', self.on_commands_click)
 
-  def on_commands_click(self, widget, event):
-    if event.type == Gdk.EventType._2BUTTON_PRESS:
-      self.on_execute_command()
+	def on_commands_click(self, widget, event):
+		if event.type == Gdk.EventType._2BUTTON_PRESS:
+			self.on_execute_command()
 
-  def on_execute_command(self, *args):
-    self.dbus_menu.activate(self.commands.select_value)
-    self.on_hide_window()
+	def on_execute_command(self, *args):
+		self.dbus_menu.activate(self.commands.select_value)
+		self.on_hide_window()
