@@ -5,6 +5,7 @@ gi.require_version('Keybinder', '3.0')
 
 from gi.repository import Gio
 from gi.repository import Keybinder
+from gi.repository import GLib
 
 from utils.fuzzy import match_replace
 from utils.window import WindowManager
@@ -168,6 +169,7 @@ class DbusMenu:
 		self.session = dbus.SessionBus()
 		self.window = WindowManager.new_window()
 		self._init_window()
+		self._listen_menu_activated()
 		WindowManager.add_listener(self.on_window_switched)
 
 	def _init_window(self):
@@ -187,7 +189,10 @@ class DbusMenu:
 		signal = proxy.connect_to_signal("MenuActivated", self.on_menu_activated)
 
 	def on_menu_activated(self, menu, x):
-		print(f'on_menu_activated {menu=} {x=} ')
+		if self.app is None:
+			self.app = GlobalMenu(self, menu, x)
+			self.app.connect('shutdown', self.on_app_shutdown)
+			self.app.run()
 
 	def on_keybind_activated(self, character):
 		if self.app is None:
@@ -198,10 +203,9 @@ class DbusMenu:
 	def on_app_shutdown(self, app):
 		self.app = None
 
-	def handle_shortcuts(self, items):
+	def _handle_shortcuts(self, top_level_menus):
 		self.keyb.remove_all_keybindings()
-		first_level_menus = set(map(lambda a: a.path[0], items))
-		for label in first_level_menus:
+		for label in top_level_menus:
 			idx = label.find('_')
 			if idx == -1:
 				continue
@@ -211,7 +215,18 @@ class DbusMenu:
 	def _update(self):
 		self.appmenu.get_results()
 		self.gtkmenu.get_results()
-		self.handle_shortcuts(self.items)
+		top_level_menus = list(dict.fromkeys(map(lambda it: it.path[0], self.items)))
+		self._handle_shortcuts(top_level_menus)
+		self._send_msg(top_level_menus)
+
+	def _send_msg(self, top_level_menus):
+		if len(top_level_menus) == 0:
+			top_level_menus = dbus.Array(signature="s")
+		name = 'com.gonzaarcr.appmenu'
+		path = '/com/gonzaarcr/appmenu'
+		session = dbus.SessionBus()
+		proxy  = session.get_object(name, path)
+		proxy.EchoSendTopLevelMenus(top_level_menus)
 
 	@property
 	def prompt(self):

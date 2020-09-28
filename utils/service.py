@@ -72,3 +72,11 @@ class MyService(dbus.service.Object):
 	@dbus.service.signal(BUS_NAME, signature='a{ss}')
 	def WindowSwitchedSignal(self, window_data):
 		pass
+
+	@dbus.service.method(BUS_NAME, in_signature='as')
+	def EchoSendTopLevelMenus(self, top_level_menus):
+		self.SendTopLevelMenus(top_level_menus)
+
+	@dbus.service.signal(BUS_NAME, signature='as')
+	def SendTopLevelMenus(self, top_level_menus):
+		pass
