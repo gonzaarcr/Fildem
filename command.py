@@ -7,6 +7,7 @@ import threading
 from handlers.default import HudMenu
 from handlers.global_menu import GlobalMenu
 from handlers.rofi import RofiMenu
+from utils.appindicator import MainApp
 
 
 def run_command(module, function):
@@ -23,10 +24,18 @@ def run_hud_menu(menu):
 	run_command('keybinder', menu)
 
 
-def default_hud_menu(*args):
-	menu = GlobalMenu()
+def global_hud_menu(accel, dbus_menu):
+	menu = GlobalMenu(dbus_menu)
 	menu.run()
 
+
+def default_hud_menu(accel, dbus_menu):
+	menu = HudMenu(dbus_menu)
+	menu.run()
+
+
+def appindicator_menu(accel, dbus_menu):
+	MainApp(dbus_menu)
 
 def rofi_hud_menu(*args):
 	menu = RofiMenu()
@@ -40,6 +49,20 @@ def main():
 		default_hud_menu()
 
 
+def global_menu():
+	if sys.stdin.isatty():
+		run_hud_menu('global_menu')
+	else:
+		global_hud_menu()
+
+
+def appind_menu():
+	if sys.stdin.isatty():
+		run_hud_menu('appindicator')
+	else:
+		appindicator_menu()
+
+
 def rofi():
 	if sys.stdin.isatty():
 		run_hud_menu('rofi')
@@ -49,3 +72,5 @@ def rofi():
 
 if __name__ == "__main__":
 	main()
+	# global_menu()
+	# appind_menu()

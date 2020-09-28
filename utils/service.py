@@ -8,17 +8,17 @@ BUS_PATH = '/com/canonical/AppMenu/Registrar'
 
 
 class AppMenuService(dbus.service.Object):
-	'''
+	"""
 		Types:
 			- u: int
 			- a: array
 			- y: byte
 			- s: string
-			- o: DBus object path 
+			- o: DBus object path
 			- g: DBus type signature
 
 		https://people.gnome.org/~ryanl/glib-docs/gvariant-format-strings.html
-	'''
+	"""
 	def __init__(self):
 		self.window_dict = dict()
 
@@ -57,14 +57,13 @@ class MyService(dbus.service.Object):
 		self.bus_name = dbus.service.BusName(self.BUS_NAME, bus=dbus.SessionBus())
 		dbus.service.Object.__init__(self, self.bus_name, self.BUS_PATH)
 
-	@dbus.service.signal(BUS_NAME, signature='s')
-	def MenuActivated(self, menu):
+	@dbus.service.signal(BUS_NAME, signature='su')
+	def MenuActivated(self, menu, x):
 		pass
 
-	@dbus.service.method(BUS_NAME, in_signature='s')
-	def EchoSignal(self, menu):
-		self.MenuActivated(menu)
-		return menu
+	@dbus.service.method(BUS_NAME, in_signature='su')
+	def EchoSignal(self, menu, x):
+		self.MenuActivated(menu, x)
 
 	@dbus.service.method(BUS_NAME, in_signature='a{ss}')
 	def WindowSwitched(self, window_data):

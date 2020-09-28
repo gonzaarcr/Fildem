@@ -1,10 +1,14 @@
 import gi
 import dbus
 
+gi.require_version('Keybinder', '3.0')
+
 from gi.repository import Gio
+from gi.repository import Keybinder
 
 from utils.fuzzy import match_replace
 from utils.window import WindowManager
+from handlers.global_menu import GlobalMenu
 
 
 def format_label(parts):
@@ -134,7 +138,6 @@ class DbusAppMenu(object):
 
 			return interface
 		except dbus.exceptions.DBusException as e:
-			# print(e)
 			return None
 
 	def get_results(self):
@@ -160,24 +163,55 @@ class DbusAppMenu(object):
 class DbusMenu:
 
 	def __init__(self):
+		self.keyb = MyKeybinder(self.on_keybind_activated)
+		self.app = None
 		self.session = dbus.SessionBus()
 		self.window = WindowManager.new_window()
 		self._init_window()
 		WindowManager.add_listener(self.on_window_switched)
-		self._win_switch_listeners = []
 
 	def _init_window(self):
 		self.appmenu = DbusAppMenu(self.session, self.window)
 		self.gtkmenu = DbusGtkMenu(self.session, self.window)
-
-	def add_window_switch_listener(self, callback):
-		self._win_switch_listeners.append(callback)
+		self._update()
 
 	def on_window_switched(self, window):
 		self.window = window
 		self._init_window()
-		for cb in self._win_switch_listeners:
-			cb()
+
+	def _listen_menu_activated(self):
+		name = 'com.gonzaarcr.appmenu'
+		path = '/com/gonzaarcr/appmenu'
+		session = dbus.SessionBus()
+		proxy  = session.get_object(name, path)
+		signal = proxy.connect_to_signal("MenuActivated", self.on_menu_activated)
+
+	def on_menu_activated(self, menu, x):
+		print(f'on_menu_activated {menu=} {x=} ')
+
+	def on_keybind_activated(self, character):
+		if self.app is None:
+			self.app = GlobalMenu(self, character)
+			self.app.connect('shutdown', self.on_app_shutdown)
+			self.app.run()
+
+	def on_app_shutdown(self, app):
+		self.app = None
+
+	def handle_shortcuts(self, items):
+		self.keyb.remove_all_keybindings()
+		first_level_menus = set(map(lambda a: a.path[0], items))
+		for label in first_level_menus:
+			idx = label.find('_')
+			if idx == -1:
+				continue
+			c = label[idx + 1]
+			self.keyb.add_keybinding(c)
+
+	def _update(self):
+		self.appmenu.get_results()
+		self.gtkmenu.get_results()
+		self.handle_shortcuts(self.items)
 
 	@property
 	def prompt(self):
@@ -185,9 +219,6 @@ class DbusMenu:
 
 	@property
 	def actions(self):
-		self.appmenu.get_results()
-		self.gtkmenu.get_results()
-
 		actions = { **self.gtkmenu.actions, **self.appmenu.actions }
 		self.handle_empty(actions)
 
@@ -212,4 +243,31 @@ class DbusMenu:
 	def handle_empty(self, actions):
 		if not len(actions):
 			alert = 'No menu items available!'
-			print('Gnome HUD: WARNING: (%s) %s' % (self.prompt, alert))
+			promt = ''
+			try:
+				promt = self.prompt
+			except Exception as e:
+				pass
+			print('Gnome HUD: WARNING: (%s) %s' % (promt, alert))
+
+
+class MyKeybinder(object):
+	def __init__(self, callback=None):
+		super(MyKeybinder, self).__init__()
+		Keybinder.init()
+		self.keybinding_strings = []
+		self.keybinder_callback = callback
+
+	def add_keybinding(self, character):
+		acc = '<Alt>' + character
+		Keybinder.bind(acc, lambda accelerator: self.on_keybind_activated(character))
+		self.keybinding_strings.append(acc)
+
+	def on_keybind_activated(self, char):
+		self.keybinder_callback(char)
+
+	def remove_all_keybindings(self):
+		for k in self.keybinding_strings:
+			Keybinder.unbind(k)
+		self.keybinding_strings = []
+

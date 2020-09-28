@@ -1,32 +1,23 @@
 import gi
-import dbus
 import time
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-gi.require_version('Keybinder', '3.0')
 
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
-from gi.repository import Keybinder
 
-from utils.menu import DbusMenu
 from utils.service import BUS_NAME, BUS_PATH
 from utils.fuzzy import FuzzyMatch
 from utils.fuzzy import normalize_string
 from utils.fuzzy import match_replace
 from utils.shortcut_decoder import parse_accel
-from utils.appindicator import AppIndicator
 
 def get_separator():
 	return u'\u0020\u0020\u00BB\u0020\u0020'
-
-
-def normalize_markup(text):
-	return text.replace('&', '&amp;')
 
 
 def inject_custom_style(widget, style_string):
@@ -40,10 +31,18 @@ def inject_custom_style(widget, style_string):
 
 class Menu(Gtk.Menu):
 
-	def __init__(self, menus, depth, accel_group, *args, **kwargs):
+	def __init__(self, menus, depth, accel_group, activate_callback=None, *args, **kwargs):
+		"""
+		menus: Gtk.Menu
+		depth: int
+		accel_group: Gtk.AccelGroup
+		activate_callback: Callable[[str], None]
+			If None the action `'app.' + item.action` is used on the MenuItem
+		"""
 		super(Gtk.Menu, self).__init__(*args, **kwargs)
 		self.accel_group = accel_group
 		self.depth = depth
+		self.callback = activate_callback
 		self.add_items(menus)
 		self.show_all()
 
@@ -52,15 +51,18 @@ class Menu(Gtk.Menu):
 		while i < len(menus):
 			item = menus[i]
 			if len(item.path) == self.depth:
-				#item
+				# item
 				menu_item = Gtk.MenuItem()
 				menu_item.set_accel_path('<MyApp>/Options')
-				menu_item.set_property('action_name', 'app.' + str(item.action))
+				if self.callback is None:
+					menu_item.set_property('action_name', 'app.' + str(item.action))
+				else:
+					menu_item.connect('activate', self.callback)
 				label = item.label
 
 				shortcut = parse_accel(item.accel)
-				if shortcut != None:
-					menu_item.add_accelerator('activate', self.accel_group, shortcut[1], shortcut[0], Gtk.AccelFlags.VISIBLE)
+				if shortcut is not None:
+					menu_item.add_accelerator('activate', self.accel_group, shortcut[0], shortcut[1], Gtk.AccelFlags.VISIBLE)
 			else:
 				# sub_menu
 				current_prefix = item.path[self.depth]
@@ -69,7 +71,7 @@ class Menu(Gtk.Menu):
 					current_menu.append(menus[i])
 					i += 1
 
-				menu_item = self.create_sub_menu(current_menu)
+				menu_item = self._create_sub_menu(current_menu)
 				label = item.path[self.depth]
 
 			menu_item.set_use_underline(True)
@@ -77,8 +79,8 @@ class Menu(Gtk.Menu):
 			self.append(menu_item)
 			i += 1
 
-	def create_sub_menu(self, menu):
-		menu = Menu(menu, self.depth + 1, self.accel_group)
+	def _create_sub_menu(self, menu):
+		menu = Menu(menu, self.depth + 1, self.accel_group, self.callback)
 		menu_item = Gtk.MenuItem()
 		menu_item.set_submenu(menu)
 		return menu_item
@@ -89,9 +91,8 @@ class CommandWindow(Gtk.ApplicationWindow):
 	def __init__(self, *args, **kwargs):
 		kwargs['type'] = Gtk.WindowType.POPUP
 		super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
+		self.app = kwargs['application']
 		self.seat = Gdk.Display.get_default().get_default_seat()
-
-		self.keybinding_strings = []
 
 		self.set_size_request(750, -1)
 		self.set_keep_above(True)
@@ -105,37 +106,8 @@ class CommandWindow(Gtk.ApplicationWindow):
 		self.set_skip_taskbar_hint(True)
 		self.set_destroy_with_parent(True)
 
-		self.search_entry = Gtk.SearchEntry(hexpand=True, margin=2)
-		self.search_entry.set_has_frame(False)
-
-		self.header_bar = Gtk.HeaderBar(spacing=0)
-		self.header_bar.set_custom_title(self.search_entry)
-
 		self.my_menu_bar = Gtk.MenuBar()
-		self.item = Gtk.MenuItem()
-		self.item.set_label('Options')
-		self.item.set_accel_path('<MyApp>/Options')
 		self.accel_group = Gtk.AccelGroup()
-		#self.add_accel_group(self.accel_group)
-		# self.item.set_property('action_name', 'app.quit')
-		self.item2 = Gtk.MenuItem()
-		self.item2.set_label('Kida long item _Next')
-		self.item3 = Gtk.MenuItem()
-		self.item3.set_use_underline(True)
-		self.item3.set_label('_Salir')
-		# self.item3.add_accelerator('activate', self.accel_group, Gdk.KEY_Q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE)
-		#self.item3.set_accel_path('<MyApp>/Options/Salir')
-		self.item3.set_property('action_name', 'app.quit')
-		self.sub_menu = Gtk.Menu()
-		self.sub_menu.append(self.item2)
-		self.sub_menu.append(self.item3)
-		self.item.set_submenu(self.sub_menu)
-
-		self.my_menu_bar.append(self.item)
-		# self.my_menu_bar.append(self.item2)
-		# self.my_menu_bar.append('Salir', 'app.quit')
-
-		# self.set_titlebar(self.header_bar)
 
 		self.main_box = Gtk.VBox()
 		self.main_box.add(self.my_menu_bar)
@@ -144,38 +116,34 @@ class CommandWindow(Gtk.ApplicationWindow):
 		# self.set_dark_variation()
 		self.set_custom_styles()
 
-		self.indicator_builder = []
-
 		Gdk.event_handler_set(self.on_gdk_event)
-		self.menu_test = None
-		self.indicator_manager = AppIndicator([])
 
 		self.connect('show', self.on_window_show)
 		self.connect('button-press-event', self.on_button_press_event)
 		self.connect('enter_notify_event', self.on_enter_event)
 		self.connect('leave_notify_event', self.on_leave_event)
 
-	def remove_all_keybindings(self):
-		for k in self.keybinding_strings:
-			Keybinder.unbind_all(k)
-		self.keybinding_strings = []
-
-	def add_keybinding(self, menu):
-		label = menu.get_label()
-		i = label.find('_')
-		if i != -1:
-			acc = '<Alt>' + label[i + 1]
-			Keybinder.bind(acc, lambda accelerator: self.open_menu_shortcut(menu))
-
 	def open_menu_shortcut(self, menu):
 		self.make_opaque()
 		self.grab_keyboard(self.get_window())
 		self.my_menu_bar.select_item(menu) # activate_item(menu)
 
+	def open_menu_by_name(self, name):
+		for menu in self.my_menu_bar.get_children():
+			if menu.get_label().replace('_', '') == name:
+				self.open_menu_shortcut(menu)
+				break
+
+	def open_menu_by_character(self, char):
+		for menu in self.my_menu_bar.get_children():
+			label = menu.get_label()
+			idx = label.find('_')
+			if idx != -1 and label[idx + 1] == char:
+				self.open_menu_shortcut(menu)
+				break
+
 	def set_menu(self, menus):
 		self.destroy_menus()
-		self.remove_all_keybindings()
-		self.indicator_manager.hide_all()
 		if len(menus) == 0:
 			return
 		current_prefix = menus[0].path[0]
@@ -190,20 +158,13 @@ class CommandWindow(Gtk.ApplicationWindow):
 		else:
 			self.create_menu(current_prefix, current_menu)
 
-		self.indicator_manager = AppIndicator(self.indicator_builder)
-		self.indicator_builder = []
-
 	def create_menu(self, name, current_menu):
 		if len(current_menu) == 0:
 			return
 		menu = Menu(current_menu, 1, self.accel_group)
 		menu.show_all()
-		self.indicator_builder.append({'menu': menu, 'label': name})
-		if self.menu_test == None:
-			self.menu_test = menu
 		button = Gtk.MenuItem()
 		button.set_label(name)
-		self.add_keybinding(button)
 		button.set_use_underline(True)
 		button.set_submenu(menu) # set_popup(menu)
 		button.show_all()
@@ -215,9 +176,10 @@ class CommandWindow(Gtk.ApplicationWindow):
 		self.my_menu_bar = Gtk.MenuBar()
 		self.main_box.add(self.my_menu_bar)
 
-	def set_custom_position(self):
+	def set_custom_position(self, x=-1, y=0):
 		position = self.get_position()
-		self.move(position.root_x, 32)
+		x = x if x != -1 else position.root_x
+		self.move(x, 32)
 
 	def set_dark_variation(self):
 		settings = Gtk.Settings.get_default()
@@ -292,26 +254,29 @@ class CommandWindow(Gtk.ApplicationWindow):
 		self.set_opacity(1)
 
 	def make_transparent(self):
-		self.set_opacity(0)
+		self.set_opacity(0.5)
 
 	def on_enter_event(self, widget, event):
 		pass
+		self.make_transparent()
 		#self.make_opaque()
 
 	def on_leave_event(self, widget, event):
 		pass
 		#self.make_transparent()
 
+
 class GlobalMenu(Gtk.Application):
 
-	def __init__(self, *args, **kwargs):
+	def __init__(self, dbus_menu, initial_menu=None, x=-1, y=-1, *args, **kwargs):
 		kwargs['application_id'] = 'org.gonzaarcr.fildemapp'
 		super(Gtk.Application, self).__init__(*args, **kwargs)
 
-		self.dbus_menu = DbusMenu()
-		self.dbus_menu.add_window_switch_listener(self.on_window_switched)
+		self.dbus_menu = dbus_menu
 		self.actions = []
-		Keybinder.init()
+		self.initial_menu = initial_menu
+		self.initial_x = x
+		self.initial_y = y
 
 		self.set_accels_for_action('app.quit', ['Escape'])
 		self.set_accels_for_action('app.prev', ['Up'])
@@ -333,18 +298,23 @@ class GlobalMenu(Gtk.Application):
 
 	def do_activate(self):
 		self.remove_all_actions()
+		self.add_menus()
+		if self.initial_menu is not None:
+			self.on_menu_activated(self.initial_menu, self.initial_x)
+		self.window.connect('focus-out-event', self.on_hide_window)
+
+	def add_menus(self):
 		ac = self.dbus_menu.actions
 		for item in self.dbus_menu.items:
 			self.add_menu_action(item.action, item.path, item.label)
 		self.window.set_menu(self.dbus_menu.items)
 		self.window.show_all()
-		# self.window.connect('focus-out-event', self.on_hide_window)
 
 	def add_menu_action(self, name, path, label):
-		'''
-			Adds an action of the foreign app. Do not add actions
-			of the app here
-		'''
+		"""
+		Adds an action of the foreign app. Do not add actions
+		of the app here
+		"""
 		name = str(name)
 		self.actions.append(name)
 		action = Gio.SimpleAction.new(name, None)
@@ -370,9 +340,13 @@ class GlobalMenu(Gtk.Application):
 		self.dbus_menu.activate(self.commands.select_value)
 		self.on_hide_window()
 
-	def on_window_switched(self):
-		self.window.remove_all_keybindings()
-		self.do_activate()
-
-	def menu_activated(self, menu):
-		print("menu activated: ", menu)
+	def on_menu_activated(self, menu: str, x=-1):
+		# I dont know if is because hidpi or what
+		# be we have to divide by two
+		if x == -1:
+			x = self.window.get_position().root_x
+		self.window.set_custom_position(x / 2)
+		if len(menu) > 1:
+			self.window.open_menu_by_name(menu)
+		else:
+			self.window.open_menu_by_character(menu)
