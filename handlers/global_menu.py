@@ -14,7 +14,6 @@ from utils.service import BUS_NAME, BUS_PATH
 from utils.fuzzy import FuzzyMatch
 from utils.fuzzy import normalize_string
 from utils.fuzzy import match_replace
-from utils.shortcut_decoder import parse_accel
 
 def get_separator():
 	return u'\u0020\u0020\u00BB\u0020\u0020'
@@ -27,6 +26,16 @@ def inject_custom_style(widget, style_string):
 	screen   = Gdk.Screen.get_default()
 	priority = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
 	Gtk.StyleContext.add_provider_for_screen(screen, provider, priority)
+
+
+def parse_accel(accel: str):
+	if accel == '':
+		return None
+	elif accel.lower() == 'del':
+		# So hardcoded that it hurts (blame qbittorrent)
+		return 65535, Gdk.ModifierType(0)
+	else:
+		return Gtk.accelerator_parse(accel)
 
 
 class Menu(Gtk.Menu):
