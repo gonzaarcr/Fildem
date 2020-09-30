@@ -138,6 +138,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 		self.my_menu_bar.select_item(menu) # activate_item(menu)
 
 	def open_menu_by_name(self, name):
+		name = name.replace('_', '')
 		for menu in self.my_menu_bar.get_children():
 			if menu.get_label().replace('_', '') == name:
 				self.open_menu_shortcut(menu)
@@ -188,7 +189,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 	def set_custom_position(self, x=-1, y=0):
 		position = self.get_position()
 		x = x if x != -1 else position.root_x
-		self.move(x, 32)
+		self.move(x, y)
 
 	def set_dark_variation(self):
 		settings = Gtk.Settings.get_default()
@@ -267,7 +268,6 @@ class CommandWindow(Gtk.ApplicationWindow):
 
 	def on_enter_event(self, widget, event):
 		pass
-		self.make_transparent()
 		#self.make_opaque()
 
 	def on_leave_event(self, widget, event):
@@ -354,8 +354,10 @@ class GlobalMenu(Gtk.Application):
 		# be we have to divide by two
 		if x == -1:
 			x = self.window.get_position().root_x
+			x = 400
 		self.window.set_custom_position(x / 2)
 		if len(menu) > 1:
 			self.window.open_menu_by_name(menu)
 		else:
 			self.window.open_menu_by_character(menu)
+		self.window.make_transparent()

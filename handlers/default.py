@@ -355,64 +355,6 @@ class CommandWindow(Gtk.ApplicationWindow):
 		self.scrolled_window.unset_placement()
 		self.command_list.set_filter_value(search_value)
 
-class CommandListWindow(Gtk.ApplicationWindow):
-
-	def __init__(self, x_pos=-1, y_pos=-1, *args, **kwargs):
-		kwargs['type'] = Gtk.WindowType.POPUP
-		super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
-
-		self.set_size_request(750, -1)
-		self.set_keep_above(True)
-		self.set_resizable(False)
-
-		self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
-		self.set_custom_position(x_pos, y_pos)
-
-		self.command_list = CommandList()
-		self.command_list.invalidate_selection()
-
-		self.scrolled_window = Gtk.ScrolledWindow(hadjustment=None, vadjustment=None)
-		self.scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-		self.scrolled_window.set_size_request(750, 110)
-		self.scrolled_window.add(self.command_list)
-		
-		self.set_skip_pager_hint(True)
-		self.set_skip_taskbar_hint(True)
-		self.set_destroy_with_parent(True)
-
-		self.main_box = Gtk.Box()
-		self.main_box.add(self.scrolled_window)
-
-		self.add(self.main_box)
-		self.connect('show', self.on_window_show)
-
-	def set_custom_position(self, x_pos, y_pos):
-		self.move(x_pos, y_pos)
-
-	def set_menu_actions(self, actions):
-		if actions:
-			self.scrolled_window.show()
-			self.command_list.set_property('menu-actions', actions)
-
-	def on_window_show(self, window):
-		window = self.get_window()
-		status = Gdk.GrabStatus.SUCCESS
-		tstamp = Gdk.CURRENT_TIME
-
-		# self.grab_keyboard(window, status, tstamp)
-		# self.grab_pointer(window, status, tstamp)
-
-		self.command_list.grab_focus()
-
-	def grab_keyboard(self, window, status, tstamp):
-		while Gdk.keyboard_grab(window, True, tstamp) != status:
-			time.sleep(0.1)
-
-	def grab_pointer(self, window, status, tstamp):
-		mask = Gdk.EventMask.BUTTON_PRESS_MASK
-
-	def filter_values(self, prefix):
-		self.command_list.set_filter_value(prefix)
 
 class HudMenu(Gtk.Application):
 
@@ -421,14 +363,11 @@ class HudMenu(Gtk.Application):
 		super(Gtk.Application, self).__init__(*args, **kwargs)
 
 		self.dbus_menu = dbus_menu
-		self.navigation = []
-		self.navigation_windows = []
 
+		# self.set_accels_for_action('app.start', ['<Ctrl><Alt>space'])
 		self.set_accels_for_action('app.quit', ['Escape'])
 		self.set_accels_for_action('app.prev', ['Up'])
 		self.set_accels_for_action('app.next', ['Down'])
-		self.set_accels_for_action('app.down', ['Right'])
-		self.set_accels_for_action('app.up', ['Left'])
 		self.set_accels_for_action('app.execute', ['Return'])
 
 	def add_simple_action(self, name, callback):
@@ -443,13 +382,12 @@ class HudMenu(Gtk.Application):
 		self.add_simple_action('quit', self.on_hide_window)
 		self.add_simple_action('prev', self.on_prev_command)
 		self.add_simple_action('next', self.on_next_command)
-		self.add_simple_action('up', self.on_up_tree_command)
-		self.add_simple_action('down', self.on_down_tree_command)
 		self.add_simple_action('execute', self.on_execute_command)
 
 	def do_activate(self):
 		self.window = CommandWindow(application=self, title='Gnome HUD')
 		self.window.show_all()
+
 		self.window.set_menu_actions(self.dbus_menu.actions)
 		self.window.connect('focus-out-event', self.on_hide_window)
 
@@ -468,48 +406,6 @@ class HudMenu(Gtk.Application):
 
 	def on_next_command(self, *args):
 		self.commands.select_next_row()
-
-	def on_up_tree_command(self, *args):
-		if len(self.navigation_windows) == 0:
-			return
-
-		window = self.navigation_windows.pop()
-		window.destroy()
-
-	def on_down_tree_command(self, *args):
-		separator = u'\u0020\u0020\u00BB\u0020\u0020'
-		children = self.window.command_list.get_children()
-		position = self.window.command_list.get_selected_row()
-		vadjustment = self.window.scrolled_window.get_property('vadjustment')
-		print('{} {} {} {} {} {}'.format(
-			vadjustment.get_lower(),
-			vadjustment.get_page_increment(),
-			vadjustment.get_page_size(),
-			vadjustment.get_step_increment(),
-			vadjustment.get_upper(),
-			vadjustment.get_value()))
-
-		item_height = vadjustment.get_upper() / len(children)
-		for i in range(len(children)):
-			if children[i] is position:
-				break
-
-		print("position: %s/%s height: %f" % (i, len(children), item_height))
-		height_new_window = 32 + i * item_height - vadjustment.get_value() # TODO height of search bar
-		sub_window = CommandListWindow(self.window.get_position().root_x, height_new_window, application=self)
-		sub_window.show_all()
-		sub_window.show()
-
-		selected = self.commands.select_value.split(separator)[0]
-		self.navigation.append(selected)
-
-		sub_window.set_menu_actions(self.dbus_menu.actions)
-		sub_window.filter_values(separator.join(self.navigation))
-		# sub_window.connect('focus-out-event', self.on_hide_window)
-		self.navigation_windows.append(sub_window)
-
-		# sub_commands = self.window.command_list
-		# sub_commands.connect_after('button-press-event', self.on_commands_click)
 
 	def on_commands_click(self, widget, event):
 		if event.type == Gdk.EventType._2BUTTON_PRESS:
