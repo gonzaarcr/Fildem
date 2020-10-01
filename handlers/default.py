@@ -13,6 +13,7 @@ from gi.repository import GObject
 from utils.fuzzy import FuzzyMatch
 from utils.fuzzy import normalize_string
 from utils.fuzzy import match_replace
+from utils.menu import WindowActions
 
 
 def normalize_markup(text):
@@ -108,6 +109,7 @@ class CommandListItem(Gtk.ListBoxRow):
 class CommandList(Gtk.ListBox):
 
 	menu_actions = GObject.Property(type=object)
+	window_actions = GObject.Property(type=object)
 
 	def __init__(self, *args, **kwargs):
 		super(Gtk.ListBox, self).__init__(*args, **kwargs)
@@ -197,9 +199,14 @@ class CommandList(Gtk.ListBox):
 		self.add(command)
 
 	def do_list_items(self):
-		for index, value in enumerate(self.menu_actions):
+		for index, value in enumerate(self.window_actions):
 			self.do_list_item(value, index)
 			self.reset_selection_state(index)
+			yield True
+		offset = len(self.window_actions)
+		for index, value in enumerate(self.menu_actions):
+			self.do_list_item(value, offset + index)
+			self.reset_selection_state(offset + index)
 			yield True
 
 	def on_row_selected(self, listbox, item):
@@ -276,6 +283,9 @@ class CommandWindow(Gtk.ApplicationWindow):
 		else:
 			self.scrolled_window.hide()
 			self.empty_box.show()
+
+	def set_window_actions(self, actions):
+		self.command_list.set_property('window-actions', actions)
 
 	def set_custom_position(self):
 		position = self.get_position()
@@ -363,6 +373,8 @@ class HudMenu(Gtk.Application):
 		super(Gtk.Application, self).__init__(*args, **kwargs)
 
 		self.dbus_menu = dbus_menu
+		self.window_actions = WindowActions(self.on_window_actions_receive)
+		self.window_actions.request_window_actions()
 
 		# self.set_accels_for_action('app.start', ['<Ctrl><Alt>space'])
 		self.set_accels_for_action('app.quit', ['Escape'])
@@ -394,6 +406,9 @@ class HudMenu(Gtk.Application):
 		self.commands = self.window.command_list
 		self.commands.connect_after('button-press-event', self.on_commands_click)
 
+	def on_window_actions_receive(self, actions):
+		self.window.set_window_actions(actions)
+
 	def on_show_window(self, *args):
 		self.window.show()
 
@@ -412,5 +427,9 @@ class HudMenu(Gtk.Application):
 			self.on_execute_command()
 
 	def on_execute_command(self, *args):
-		self.dbus_menu.activate(self.commands.select_value)
+		selected_value = self.commands.select_value
+		if selected_value in self.window_actions.actions:
+			self.window_actions.activate_action(selected_value)
+		else:
+			self.dbus_menu.activate(selected_value)
 		self.on_hide_window()

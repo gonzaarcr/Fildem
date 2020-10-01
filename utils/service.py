@@ -80,3 +80,28 @@ class MyService(dbus.service.Object):
 	@dbus.service.signal(BUS_NAME, signature='as')
 	def SendTopLevelMenus(self, top_level_menus):
 		pass
+
+	# Window action stuff (the menu on alt-space)
+	@dbus.service.method(BUS_NAME)
+	def RequestWindowActions(self):
+		self.RequestWindowActionsSignal()
+
+	@dbus.service.signal(BUS_NAME)
+	def RequestWindowActionsSignal(self):
+		pass
+
+	@dbus.service.method(BUS_NAME, in_signature='as')
+	def ListWindowActions(self, action_list):
+		self.ListWindowActionsSignal(action_list)
+
+	@dbus.service.signal(BUS_NAME, signature='as')
+	def ListWindowActionsSignal(self, top_level_menus):
+		pass
+
+	@dbus.service.method(BUS_NAME, in_signature='s')
+	def ActivateWindowAction(self, action):
+		self.ActivateWindowActionSignal(action)
+
+	@dbus.service.signal(BUS_NAME, signature='s')
+	def ActivateWindowActionSignal(self, action):
+		pass

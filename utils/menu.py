@@ -215,7 +215,10 @@ class DbusMenu:
 	def _update(self):
 		self.appmenu.get_results()
 		self.gtkmenu.get_results()
-		top_level_menus = list(dict.fromkeys(map(lambda it: it.path[0], self.items)))
+		top_level_menus = list(dict.fromkeys(map(lambda it: it.path[0] if len(it.path) > 0 else None, self.items)))
+		# print(top_level_menus)
+		top_level_menus = list(filter(lambda x: x is not None, top_level_menus))
+		# print(top_level_menus)
 		self._handle_shortcuts(top_level_menus)
 		self._send_msg(top_level_menus)
 
@@ -286,3 +289,30 @@ class MyKeybinder(object):
 			Keybinder.unbind(k)
 		self.keybinding_strings = []
 
+
+class WindowActions(object):
+	"""Window actions from the shell from the alt-space menu"""
+	def __init__(self, callback=None):
+		super(WindowActions, self).__init__()
+
+		self.acc = None
+		self.listeners = []
+		if callback is not None:
+			self.listeners.append(callback)
+
+		session = dbus.SessionBus()
+		name = 'com.gonzaarcr.appmenu'
+		path = '/com/gonzaarcr/appmenu'
+		self.proxy  = session.get_object(name, path)
+		signal = self.proxy.connect_to_signal("ListWindowActionsSignal", self.on_actions_receive)
+
+	def request_window_actions(self):
+		self.proxy.RequestWindowActions()
+
+	def on_actions_receive(self, actions):
+		self.actions = actions
+		for callback in self.listeners:
+			callback(actions)
+
+	def activate_action(self, action):
+		self.proxy.ActivateWindowAction(action)

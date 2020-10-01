@@ -207,6 +207,9 @@ class CommandWindow(Gtk.ApplicationWindow):
 
 			scrollbar { opacity: 0; }
 
+  			menubar { background-color: #1d1d1d; }
+  			menubar > menuitem { min-height: 20px; }
+
 			window decoration { box-shadow: none; border-color: @borders;
 				border-style: solid; border-width: 1px; border-radius: 0; }
 		"""
@@ -264,7 +267,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 		self.set_opacity(1)
 
 	def make_transparent(self):
-		self.set_opacity(0.5)
+		self.set_opacity(1)
 
 	def on_enter_event(self, widget, event):
 		pass
@@ -354,7 +357,7 @@ class GlobalMenu(Gtk.Application):
 		# be we have to divide by two
 		if x == -1:
 			x = self.window.get_position().root_x
-			x = 400
+		x = 400
 		self.window.set_custom_position(x / 2)
 		if len(menu) > 1:
 			self.window.open_menu_by_name(menu)
