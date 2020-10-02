@@ -121,11 +121,14 @@ class CommandList(Gtk.ListBox):
 		self.selected_row = 0
 		self.selected_obj = None
 
+		self.list_window_actions = False
+
 		self.set_sort_func(self.sort_function)
 		self.set_filter_func(self.filter_function)
 
 		self.connect('row-selected', self.on_row_selected)
 		self.connect('notify::menu-actions', self.on_menu_actions_notify)
+		self.connect('notify::window-actions', self.on_menu_actions_notify)
 
 	def set_filter_value(self, value=None):
 		self.visible_rows = []
@@ -199,11 +202,14 @@ class CommandList(Gtk.ListBox):
 		self.add(command)
 
 	def do_list_items(self):
-		for index, value in enumerate(self.window_actions):
-			self.do_list_item(value, index)
-			self.reset_selection_state(index)
-			yield True
-		offset = len(self.window_actions)
+		if self.list_window_actions:
+			for index, value in enumerate(self.window_actions):
+				self.do_list_item(value, index)
+				self.reset_selection_state(index)
+				yield True
+
+		offset = len(self.window_actions) if self.window_actions is not None else 0
+		
 		for index, value in enumerate(self.menu_actions):
 			self.do_list_item(value, offset + index)
 			self.reset_selection_state(offset + index)
@@ -212,11 +218,16 @@ class CommandList(Gtk.ListBox):
 	def on_row_selected(self, listbox, item):
 		self.select_value = item.value if item else ''
 
+	# args=(<default.CommandList object (handlers+default+CommandList)>, <GParamBoxed 'menu-actions'>)
 	def on_menu_actions_notify(self, *args):
 		self.visible_rows = []
 		self.foreach(lambda item: item.destroy())
 
-		run_generator(self.do_list_items)
+		if args[1].name == 'window-actions':
+			self.list_window_actions = True
+			# run_generator(self.do_list_items)
+		elif args[1].name == 'menu-actions':
+			run_generator(self.do_list_items)
 
 
 class CommandWindow(Gtk.ApplicationWindow):
@@ -279,12 +290,11 @@ class CommandWindow(Gtk.ApplicationWindow):
 			self.empty_box.hide()
 			self.scrolled_window.show()
 
-			self.command_list.set_property('menu-actions', actions)
-		else:
-			self.scrolled_window.hide()
-			self.empty_box.show()
+		self.command_list.set_property('menu-actions', actions)
 
 	def set_window_actions(self, actions):
+		self.empty_box.hide()
+		self.scrolled_window.show()
 		self.command_list.set_property('window-actions', actions)
 
 	def set_custom_position(self):
