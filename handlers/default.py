@@ -196,6 +196,7 @@ class CommandList(Gtk.ListBox):
 		return item.visibility()
 
 	def do_list_item(self, value, index):
+		value = value.replace('_', '')
 		command = CommandListItem(value=value, index=index)
 
 		self.append_visible_row(command)
@@ -379,7 +380,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 class HudMenu(Gtk.Application):
 
 	def __init__(self, dbus_menu, *args, **kwargs):
-		kwargs['application_id'] = 'org.hardpixel.gnomeHUD'
+		kwargs['application_id'] = 'org.gonzaarcr.fildemapp'
 		super(Gtk.Application, self).__init__(*args, **kwargs)
 
 		self.dbus_menu = dbus_menu

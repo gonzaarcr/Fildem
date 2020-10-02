@@ -9,6 +9,7 @@ from gi.repository import GLib
 
 from utils.fuzzy import match_replace
 from utils.window import WindowManager
+from utils.service import MyService
 from handlers.global_menu import GlobalMenu
 
 
@@ -182,10 +183,7 @@ class DbusMenu:
 		self._init_window()
 
 	def _listen_menu_activated(self):
-		name = 'com.gonzaarcr.appmenu'
-		path = '/com/gonzaarcr/appmenu'
-		session = dbus.SessionBus()
-		proxy  = session.get_object(name, path)
+		proxy  = self.session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
 		signal = proxy.connect_to_signal("MenuActivated", self.on_menu_activated)
 
 	def on_menu_activated(self, menu, x):
@@ -216,19 +214,14 @@ class DbusMenu:
 		self.appmenu.get_results()
 		self.gtkmenu.get_results()
 		top_level_menus = list(dict.fromkeys(map(lambda it: it.path[0] if len(it.path) > 0 else None, self.items)))
-		# print(top_level_menus)
 		top_level_menus = list(filter(lambda x: x is not None, top_level_menus))
-		# print(top_level_menus)
 		self._handle_shortcuts(top_level_menus)
 		self._send_msg(top_level_menus)
 
 	def _send_msg(self, top_level_menus):
 		if len(top_level_menus) == 0:
 			top_level_menus = dbus.Array(signature="s")
-		name = 'com.gonzaarcr.appmenu'
-		path = '/com/gonzaarcr/appmenu'
-		session = dbus.SessionBus()
-		proxy  = session.get_object(name, path)
+		proxy  = self.session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
 		proxy.EchoSendTopLevelMenus(top_level_menus)
 
 	@property
@@ -295,15 +288,12 @@ class WindowActions(object):
 	def __init__(self, callback=None):
 		super(WindowActions, self).__init__()
 
-		self.acc = None
 		self.listeners = []
 		if callback is not None:
 			self.listeners.append(callback)
 
 		session = dbus.SessionBus()
-		name = 'com.gonzaarcr.appmenu'
-		path = '/com/gonzaarcr/appmenu'
-		self.proxy  = session.get_object(name, path)
+		self.proxy  = session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
 		signal = self.proxy.connect_to_signal("ListWindowActionsSignal", self.on_actions_receive)
 
 	def request_window_actions(self):

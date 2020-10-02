@@ -15,9 +15,6 @@ from command import appindicator_menu
 
 from utils.menu import DbusMenu
 
-BUS_PATH = '/com/gonzaarcr/appmenu'
-BUS_NAME = 'com.gonzaarcr.appmenu'
-
 
 def run_keybinder(callback):
 	# for wayland

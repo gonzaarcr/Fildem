@@ -15,7 +15,6 @@ It’s replacement is a gnome extension
 # if there’s a problem, maybe try this
 # loginctl show-session $(loginctl | grep $(whoami) | awk '{print $1}') -p Type
 backend = os.environ['XDG_SESSION_TYPE']
-print(backend)
 
 class Window(object):
 	def __init__(self, bamf_window=None):
@@ -80,10 +79,7 @@ class WindowManager(object):
 		if backend == 'x11':
 			cls._get_matcher().connect('active-window-changed', cls._window_switched_bamf)
 		else:
-			session = dbus.SessionBus()
-			name = 'com.gonzaarcr.appmenu'
-			path = '/com/gonzaarcr/appmenu'
-			proxy  = self.session.get_object(name, path)
+			proxy  = self.session.get_object('com.gonzaarcr.appmenu', '/com/gonzaarcr/appmenu')
 			signal = proxy.connect_to_signal("WindowSwitchedSignal", cls._window_switched)
 
 	@classmethod
