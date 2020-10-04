@@ -1,7 +1,6 @@
 #! /usr/bin/python3
 
 import gi
-import dbus
 
 gi.require_version('Keybinder', '3.0')
 

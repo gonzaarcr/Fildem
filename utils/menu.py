@@ -4,9 +4,7 @@ import time
 
 gi.require_version('Keybinder', '3.0')
 
-from gi.repository import Gio
 from gi.repository import Keybinder
-from gi.repository import GLib
 
 from utils.fuzzy import match_replace
 from utils.window import WindowManager

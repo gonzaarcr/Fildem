@@ -7,13 +7,7 @@ gi.require_version('Gdk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Gio
-from gi.repository import GLib
-from gi.repository import GObject
 
-from utils.service import BUS_NAME, BUS_PATH
-from utils.fuzzy import FuzzyMatch
-from utils.fuzzy import normalize_string
-from utils.fuzzy import match_replace
 
 def get_separator():
 	return u'\u0020\u0020\u00BB\u0020\u0020'
@@ -223,13 +217,6 @@ class CommandWindow(Gtk.ApplicationWindow):
 	def ungrab_keyboard(self):
 		self.seat.ungrab()
 
-	def grab_pointer(self, window, status=Gdk.GrabStatus.SUCCESS, tstamp=-1):
-		return
-		mask = Gdk.EventMask.BUTTON_PRESS_MASK
-
-		while Gdk.pointer_grab(window, True, mask, window, None, tstamp) != status:
-			time.sleep(0.1)
-
 	def emulate_focus_out_event(self):
 		tstamp = Gdk.CURRENT_TIME
 		self.seat.ungrab()
@@ -253,7 +240,6 @@ class CommandWindow(Gtk.ApplicationWindow):
 		tstamp = Gdk.CURRENT_TIME
 
 		self.grab_keyboard(window, status)
-		# self.grab_pointer(window, status, tstamp)
 
 	def on_button_press_event(self, widget, event):
 		win_type = event.get_window().get_window_type()
