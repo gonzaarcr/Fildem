@@ -1,4 +1,5 @@
 import gi
+import dbus
 
 gi.require_version('Bamf', '3')
 
@@ -79,7 +80,8 @@ class WindowManager(object):
 		if backend == 'x11':
 			cls._get_matcher().connect('active-window-changed', cls._window_switched_bamf)
 		else:
-			proxy  = self.session.get_object('com.gonzaarcr.appmenu', '/com/gonzaarcr/appmenu')
+			session = dbus.SessionBus()
+			proxy  = session.get_object('com.gonzaarcr.appmenu', '/com/gonzaarcr/appmenu')
 			signal = proxy.connect_to_signal("WindowSwitchedSignal", cls._window_switched)
 
 	@classmethod
@@ -97,9 +99,9 @@ class WindowManager(object):
 		win = Window()
 		for p in win_data:
 			if p == 'xid':
-				win[p] = int(window_data[p]) if window_data[p] != '' else 0
+				win.set_xid(int(win_data[p]) if win_data[p] != '' else 0)
 			else:
-				win.set_utf8_prop('_' + p.upper(), window_data[p])
+				win.set_utf8_prop('_' + p.upper(), win_data[p])
 
 		return win
 
