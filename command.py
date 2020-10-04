@@ -11,8 +11,7 @@ from utils.appindicator import MainApp
 
 
 def run_command(module, function):
-	PATH = '~/wip/gnomehud'
-	args = 'cd '+ PATH + '; ' + 'python3 -c "from %s import %s as run; run()"'
+	args = 'python3 -c "from %s import %s as run; run()"'
 	args = args % (module, function)
 
 	proc = threading.Thread(target=os.system, args=[args])
