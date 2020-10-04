@@ -1,4 +1,4 @@
-# Fildrem
+# Fildem
 
 ## Global menu for Ubuntu 20
 
@@ -11,5 +11,7 @@ The dependencies are the same as gnome-hud:
 ```
 gtk3 bamf linkeybinder3 python python-gobject python-dbus
 ```
+
+You can also bring a HUD menu with Alt + Space.
 
 This is a prototype, as I don’t know if people will like or how much it will last until devs nuke it, so fell free to let me know your opinion.
