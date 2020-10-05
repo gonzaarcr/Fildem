@@ -7,7 +7,6 @@ import threading
 from handlers.default import HudMenu
 from handlers.global_menu import GlobalMenu
 from handlers.rofi import RofiMenu
-from utils.appindicator import MainApp
 
 
 def run_command(module, function):
@@ -33,9 +32,6 @@ def default_hud_menu(accel, dbus_menu):
 	menu.run()
 
 
-def appindicator_menu(accel, dbus_menu):
-	MainApp(dbus_menu)
-
 def rofi_hud_menu(*args):
 	menu = RofiMenu()
 	menu.run()
@@ -55,13 +51,6 @@ def global_menu():
 		global_hud_menu()
 
 
-def appind_menu():
-	if sys.stdin.isatty():
-		run_hud_menu('appindicator')
-	else:
-		appindicator_menu()
-
-
 def rofi():
 	if sys.stdin.isatty():
 		run_hud_menu('rofi')
@@ -72,4 +61,3 @@ def rofi():
 if __name__ == "__main__":
 	main()
 	# global_menu()
-	# appind_menu()

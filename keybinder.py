@@ -10,7 +10,6 @@ from dbus.mainloop.glib import DBusGMainLoop
 from command import default_hud_menu
 from command import rofi_hud_menu
 from command import global_hud_menu
-from command import appindicator_menu
 
 from utils.menu import DbusMenu
 
@@ -36,10 +35,6 @@ def rofi():
 
 def global_menu():
 	run_keybinder(global_hud_menu)
-
-
-def appindicator():
-	run_keybinder(appindicator_menu)
 
 
 if __name__ == "__main__":
