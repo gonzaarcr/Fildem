@@ -202,7 +202,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 			scrollbar { opacity: 0; }
 
   			menubar { background-color: #1d1d1d; }
-  			/* menubar > menuitem { min-height: 18px; } */
+  			menubar > menuitem { min-height: 1em; }
 
 			window decoration { box-shadow: none; border-color: @borders;
 				border-style: solid; border-width: 1px; border-radius: 0; }
@@ -265,6 +265,8 @@ class CommandWindow(Gtk.ApplicationWindow):
 
 
 class GlobalMenu(Gtk.Application):
+
+	HORIZONTAL_OFFSET = 400
 
 	def __init__(self, dbus_menu, initial_menu=None, x=-1, y=-1, *args, **kwargs):
 		kwargs['application_id'] = 'org.gonzaarcr.fildemapp'
@@ -339,12 +341,8 @@ class GlobalMenu(Gtk.Application):
 		self.on_hide_window()
 
 	def on_menu_activated(self, menu: str, x=-1):
-		# I dont know if is because hidpi or what
-		# be we have to divide by two
-		if x == -1:
-			x = self.window.get_position().root_x
-		x = 400
-		self.window.set_custom_position(x / 2)
+		x = self.HORIZONTAL_OFFSET / Gdk.Display.get_default().get_monitor(0).get_scale_factor()
+		self.window.set_custom_position(x)
 		if len(menu) > 1:
 			self.window.open_menu_by_name(menu)
 		else:
