@@ -302,9 +302,9 @@ class CommandWindow(Gtk.ApplicationWindow):
 		position = self.get_position()
 		self.move(position.root_x, 32)
 
-	def set_dark_variation(self):
+	def set_dark_variation(self, set_dark=True):
 		settings = Gtk.Settings.get_default()
-		settings.set_property('gtk-application-prefer-dark-theme', True)
+		settings.set_property('gtk-application-prefer-dark-theme', set_dark)
 
 	def set_custom_styles(self):
 		styles = """entry.search.flat { border: 0; outline: 0;
@@ -424,6 +424,7 @@ class HudMenu(Gtk.Application):
 		self.window.show()
 
 	def on_hide_window(self, *args):
+		self.window.set_dark_variation(False)
 		self.window.destroy()
 		self.quit()
 
