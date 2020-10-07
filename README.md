@@ -4,8 +4,9 @@
 
 [![Buy Me A Coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg)](https://buymeacoffee.com/gonza)
 
-This project is a fork of gnomehud with the adition of a global menu bar. To install it you have to download this repo and install the extension copying/moving the `fildemGMenu@gonza.com` folder into `~/.local/share/gnome-shell/extensions`. Then, you have to run the app with `./run.sh`.
+![Fildem](https://user-images.githubusercontent.com/19943481/95288612-1d272a80-083f-11eb-9400-be88f61e054d.png)
 
+This project is a fork of gnomehud with the adition of a global menu bar. To install it you have to download this repo and install the extension copying/moving the `fildemGMenu@gonza.com` folder into `~/.local/share/gnome-shell/extensions`. Then, you have to run the app with `./run.sh`.
 
 You can also bring a HUD menu with Alt + Space.
 
