@@ -306,19 +306,20 @@ class GlobalMenu(Gtk.Application):
 	def add_menus(self):
 		ac = self.dbus_menu.actions
 		for item in self.dbus_menu.items:
-			self.add_menu_action(item.action, item.path, item.label)
+			self.add_menu_action(item)
 		self.window.set_menu(self.dbus_menu.items)
 		self.window.show_all()
 
-	def add_menu_action(self, name, path, label):
+	def add_menu_action(self, item):
 		"""
 		Adds an action of the foreign app. Do not add actions
 		of the app here
 		"""
-		name = str(name)
+		name = str(item.action)
+		path = item.path
 		self.actions.append(name)
 		action = Gio.SimpleAction.new(name, None)
-		path = get_separator().join(path) + get_separator() + label
+		path = get_separator().join(path) + get_separator() + item.label
 		callback = lambda a, b: self.dbus_menu.activate(path)
 		action.connect('activate', callback)
 		self.add_action(action)
