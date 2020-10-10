@@ -19,13 +19,16 @@ def format_label(parts):
 
 class DbusGtkMenuItem(object):
 
-	def __init__(self, item, path=[]):
+	def __init__(self, item, path=[], enabled=True):
 		self.path   = path
 		self.action = str(item.get('action', ''))
 		self.accel  = str(item.get('accel', '')) # <Primary><Shift><Alt>p
 		self.shortcut = str(item.get('shortcut', ''))
 		self.label  = item.get('label', '')
 		self.text   = format_label(self.path + [self.label])
+		self.enabled = enabled
+		self.checkable = False
+		self.checked = False
 
 
 class DbusGtkMenu(object):
@@ -37,8 +40,11 @@ class DbusGtkMenu(object):
 		self.items        = []
 		self.session      = session
 		self.bus_name     = window.get_utf8_prop('_GTK_UNIQUE_BUS_NAME')
+		# with app. prefix
 		self.app_path     = window.get_utf8_prop('_GTK_APPLICATION_OBJECT_PATH')
+		# with win. prefix
 		self.win_path     = window.get_utf8_prop('_GTK_WINDOW_OBJECT_PATH')
+		# with unity. prefix
 		self.menubar_path = window.get_utf8_prop('_GTK_MENUBAR_OBJECT_PATH')
 		self.appmenu_path = window.get_utf8_prop('_GTK_APP_MENU_OBJECT_PATH')
 
@@ -75,6 +81,9 @@ class DbusGtkMenu(object):
 		for menu in self.results.get((menu[0], menu[1]), []):
 			if 'label' in menu:
 				menu_item = DbusGtkMenuItem(menu, labels)
+				description = self.describe(menu_item.action)
+				if description is not None:
+					menu_item.enabled = description[0]
 
 				menu_path = labels + [menu_item.label]
 
@@ -86,6 +95,41 @@ class DbusGtkMenu(object):
 
 			elif ':section' in menu:
 				self.collect_entries(menu[':section'], labels)
+
+	def describe(self, action):
+		"""
+		Describe return this:
+		dbus.Struct((
+		 dbus.Boolean(True), # enabled
+		 dbus.Signature(''),
+		 dbus.Array([ # This is empty in a not checked item
+		  dbus.Boolean(True, variant_level=1)], # Checked or not
+		  signature=dbus.Signature('v'))),
+		 signature=None)
+		"""
+		if action.startswith('unity'):
+			path = self.menubar_path
+		elif action.startswith('win'):
+			path = self.win_path
+		elif action.startswith('app'):
+			path = self.app_path
+		else:
+			return None
+
+		dot = action.find('.')
+		action = action[dot+1:]
+		object    = self.session.get_object(self.bus_name, path)
+		interface = dbus.Interface(object, dbus_interface='org.gtk.Actions')
+
+		try:
+			description = interface.Describe(action)
+		except Exception as e:
+			# import traceback; traceback.print_exc()
+			return None
+		enabled = description[0]
+		checked = description[2]
+		# print('action: ', action, '->', description)
+		return description[0], description[2]
 
 
 class DbusAppMenuItem(object):

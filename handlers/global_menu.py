@@ -319,6 +319,7 @@ class GlobalMenu(Gtk.Application):
 		path = item.path
 		self.actions.append(name)
 		action = Gio.SimpleAction.new(name, None)
+		action.set_enabled(item.enabled)
 		path = get_separator().join(path) + get_separator() + item.label
 		callback = lambda a, b: self.dbus_menu.activate(path)
 		action.connect('activate', callback)
