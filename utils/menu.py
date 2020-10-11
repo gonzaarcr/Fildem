@@ -273,9 +273,13 @@ class DbusMenu:
 			c = label[idx + 1]
 			self.keyb.add_keybinding(c)
 
-	def _update(self):
-		self.appmenu.get_results()
+	def _update_menus(self):
 		self.gtkmenu.get_results()
+		if not len(self.appmenu.items):
+			self.appmenu.get_results()
+
+	def _update(self):
+		self._update_menus()
 		top_level_menus = list(dict.fromkeys(map(lambda it: it.path[0] if len(it.path) > 0 else None, self.items)))
 		top_level_menus = list(filter(lambda x: x is not None, top_level_menus))
 		self._handle_shortcuts(top_level_menus)
@@ -293,18 +297,25 @@ class DbusMenu:
 
 	@property
 	def actions(self):
-		actions = { **self.gtkmenu.actions, **self.appmenu.actions }
+		actions = self.gtkmenu.actions
+		if not len(actions):
+			actions = self.appmenu.actions
+
 		self.handle_empty(actions)
 
 		return actions.keys()
 
 	def accel(self):
-		accel = { **self.gtkmenu.accels, **self.appmenu.accels }
+		accel = self.gtkmenu.accels
+		if not len(accel):
+			accel = self.appmenu.accels
 		return accel
 
 	@property
 	def items(self):
-		items = self.gtkmenu.items + self.appmenu.items
+		items = self.appmenu.items
+		if not len(items):
+			items = self.gtkmenu.items
 		return items
 
 	def activate(self, selection):
