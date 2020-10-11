@@ -202,8 +202,8 @@ class CommandWindow(Gtk.ApplicationWindow):
 
 			scrollbar { opacity: 0; }
 
-  			menubar { background-color: #1d1d1d; }
-  			menubar > menuitem { min-height: 1em; }
+			menubar { background-color: #1d1d1d; }
+			menubar > menuitem { min-height: 1em; }
 
 			window decoration { box-shadow: none; border-color: @borders;
 				border-style: solid; border-width: 1px; border-radius: 0; }
