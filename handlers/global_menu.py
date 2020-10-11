@@ -74,6 +74,7 @@ class Menu(Gtk.Menu):
 					current_menu.append(menus[i])
 					i += 1
 
+				i -= 1
 				menu_item = self._create_sub_menu(current_menu)
 				label = item.path[self.depth]
 
