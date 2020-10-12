@@ -38,6 +38,7 @@ class Menu(Gtk.Menu):
 		"""
 		menus: Gtk.Menu
 		depth: int
+			equals to len(item.path) (path doesn’t include the label)
 		accel_group: Gtk.AccelGroup
 		activate_callback: Callable[[str], None]
 			If None the action `'app.' + item.action` is used on the MenuItem
@@ -51,21 +52,19 @@ class Menu(Gtk.Menu):
 
 	def add_items(self, menus):
 		i = 0
+		current_section = None
 		while i < len(menus):
 			item = menus[i]
-			if len(item.path) == self.depth:
-				# item
-				menu_item = Gtk.MenuItem()
-				menu_item.set_accel_path('<MyApp>/Options')
-				if self.callback is None:
-					menu_item.set_property('action_name', 'app.' + str(item.action))
-				else:
-					menu_item.connect('activate', self.callback)
-				label = item.label
 
-				shortcut = parse_accel(item.accel)
-				if shortcut is not None:
-					menu_item.add_accelerator('activate', self.accel_group, shortcut[0], shortcut[1], Gtk.AccelFlags.VISIBLE)
+			if len(item.path) == self.depth:
+				# Separator
+				if (item.section is not None and current_section is not None
+						and item.section == (current_section[0], current_section[1] + 1)):
+					self.append(Gtk.SeparatorMenuItem())
+				current_section = item.section
+				
+				# item
+				menu_item = self._create_item(item)
 			else:
 				# sub_menu
 				current_prefix = item.path[self.depth]
@@ -76,10 +75,8 @@ class Menu(Gtk.Menu):
 
 				i -= 1
 				menu_item = self._create_sub_menu(current_menu)
-				label = item.path[self.depth]
+				menu_item.set_label(item.path[self.depth])
 
-			menu_item.set_use_underline(True)
-			menu_item.set_label(label)
 			self.append(menu_item)
 			i += 1
 
@@ -87,6 +84,43 @@ class Menu(Gtk.Menu):
 		menu = Menu(menu, self.depth + 1, self.accel_group, self.callback)
 		menu_item = Gtk.MenuItem()
 		menu_item.set_submenu(menu)
+		menu_item.set_use_underline(True)
+		return menu_item
+
+	def _create_item(self, item):
+		"""
+		Parameters
+		----------
+		item: Union[DbusGtkMenuItem, DbusAppMenuItem]
+
+		Returns
+		-------
+		Gtk.MenuItem
+		"""
+		if item.separator:
+			return Gtk.SeparatorMenuItem()
+		elif item.toggle_type == 'radio':
+			menu_item = Gtk.RadioMenuItem()
+		elif item.toggle_type == 'checkmark':
+			menu_item = Gtk.CheckMenuItem()
+		elif item.toggle_type == '':
+			menu_item = Gtk.MenuItem()
+
+		if item.toggle_state:
+			menu_item.set_active(True)
+
+		menu_item.set_accel_path('<MyApp>/Options')
+		if self.callback is None:
+			menu_item.set_property('action_name', 'app.' + str(item.action))
+		else:
+			menu_item.connect('activate', self.callback)
+
+		shortcut = parse_accel(item.accel)
+		if shortcut is not None:
+			menu_item.add_accelerator('activate', self.accel_group, shortcut[0], shortcut[1], Gtk.AccelFlags.VISIBLE)
+		
+		menu_item.set_label(item.label)
+		menu_item.set_use_underline(True)
 		return menu_item
 
 

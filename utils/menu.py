@@ -21,15 +21,31 @@ class DbusGtkMenuItem(object):
 
 	def __init__(self, item, path=[], enabled=True):
 		self.path   = path
+		self.separator = False
 		self.action = str(item.get('action', ''))
 		self.accel  = str(item.get('accel', '')) # <Primary><Shift><Alt>p
 		self.shortcut = str(item.get('shortcut', ''))
 		self.label  = item.get('label', '')
 		self.text   = format_label(self.path + [self.label])
 		self.enabled = enabled
-		self.checkable = False
-		self.checked = False
+		self.toggle_type = ''
+		self.toggle_state = False
+		# :submenu
+		# two index that indicate the group
+		# dbus.String(':submenu'): dbus.Struct((dbus.UInt32(11), dbus.UInt32(0))
+		# used for separators and radio button groups
+		self.section = None
 
+	def set_toggle(self, toggle):
+		if not len(toggle):
+			return
+		toggle = toggle[0]
+		if isinstance(toggle, dbus.Boolean):
+			self.toggle_type = 'checkmark'
+			self.toggle_state = toggle
+		elif isinstance(toggle, str):
+			self.toggle_type = 'radio'
+			self.toggle_state = len(toggle) > 0
 
 class DbusGtkMenu(object):
 
@@ -70,7 +86,11 @@ class DbusGtkMenu(object):
 		for path in filter(None, paths):
 			object    = self.session.get_object(self.bus_name, path)
 			interface = dbus.Interface(object, dbus_interface='org.gtk.Menus')
-			results   = interface.Start([x for x in range(1024)])
+			try:
+				results   = interface.Start([x for x in range(1024)])
+			except Exception:
+				continue
+			interface.End([x for x in range(1024)])
 
 			for menu in results:
 				self.results[(menu[0], menu[1])] = menu[2]
@@ -78,12 +98,15 @@ class DbusGtkMenu(object):
 		self.collect_entries([0, 0])
 
 	def collect_entries(self, menu, labels=[]):
-		for menu in self.results.get((menu[0], menu[1]), []):
+		section = (menu[0], menu[1])
+		for menu in self.results.get(section, []):
 			if 'label' in menu:
 				menu_item = DbusGtkMenuItem(menu, labels)
+				menu_item.section = section
 				description = self.describe(menu_item.action)
 				if description is not None:
 					menu_item.enabled = description[0]
+					menu_item.set_toggle(description[1])
 
 				menu_path = labels + [menu_item.label]
 
@@ -128,8 +151,7 @@ class DbusGtkMenu(object):
 			return None
 		enabled = description[0]
 		checked = description[2]
-		# print('action: ', action, '->', description)
-		return description[0], description[2]
+		return enabled, checked
 
 
 class DbusAppMenuItem(object):
@@ -138,11 +160,16 @@ class DbusAppMenuItem(object):
 		self.path   = path
 		self.action = int(item[0])
 		self.accel  = self.get_shorcut(item[1])
+		self.separator = item[1].get('type', '') == 'separator'
 		self.label  = item[1].get('label', '')
 		self.text   = format_label(self.path + [self.label])
 		self.enabled = item[1].get('enabled', True)
 		self.visible = item[1].get('visible', True)
+		self.toggle_state = item[1].get('toggle-state', 0) == 1
+		self.toggle_type = item[1].get('toggle-type', '') # 'radio' or 'checkmark'
 		self.icon_data = item[1].get('icon_data', bytearray())
+		# Only used on Gtkapps
+		self.section = None
 
 	def get_shorcut(self, item):
 		shortcut = item.get('shortcut', '')
@@ -221,7 +248,7 @@ class DbusAppMenu(object):
 			for child in item[2]:
 				self.collect_entries(child, menu_path)
 
-		elif bool(menu_item.label):
+		elif bool(menu_item.label) or menu_item.separator:
 			self.actions[menu_item.text] = menu_item.action
 			self.items.append(menu_item)
 
