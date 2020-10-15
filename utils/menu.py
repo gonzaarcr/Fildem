@@ -90,7 +90,7 @@ class DbusGtkMenu(object):
 				results   = interface.Start([x for x in range(1024)])
 			except Exception:
 				continue
-			interface.End([x for x in range(1024)])
+			# interface.End([x for x in range(1024)])
 
 			for menu in results:
 				self.results[(menu[0], menu[1])] = menu[2]
