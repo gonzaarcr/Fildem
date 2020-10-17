@@ -254,7 +254,6 @@ const MenuBar = class MenuBar {
 		this._proxy.listeners['SendTopLevelMenus'].push(this.setMenus.bind(this));
 		Main.panel.reactive = true;
 		Main.panel.track_hover = true;
-		// Main.panel.connect('notify::hover', this._onPanelHover.bind(this));
 		Main.panel.connect('enter-event', this._onPanelEnter.bind(this));
 		Main.panel.connect('leave-event', this._onPanelLeave.bind(this));
 	}
@@ -275,11 +274,6 @@ const MenuBar = class MenuBar {
 		for (let menu of menus) {
 			this.addMenuButton(menu);
 		}
-	}
-
-	_onPanelHover() {
-		global.log('onhover '+ Main.panel.hover);
-		this._onPanelEnter();
 	}
 
 	_onPanelEnter() {
