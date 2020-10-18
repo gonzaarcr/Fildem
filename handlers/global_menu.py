@@ -301,9 +301,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 
 class GlobalMenu(Gtk.Application):
 
-	HORIZONTAL_OFFSET = 400
-
-	def __init__(self, dbus_menu, initial_menu=None, x=-1, y=-1, *args, **kwargs):
+	def __init__(self, dbus_menu, initial_menu=None, x=-1, *args, **kwargs):
 		kwargs['application_id'] = 'org.gonzaarcr.fildemapp'
 		super(Gtk.Application, self).__init__(*args, **kwargs)
 
@@ -311,7 +309,6 @@ class GlobalMenu(Gtk.Application):
 		self.actions = []
 		self.initial_menu = initial_menu
 		self.initial_x = x
-		self.initial_y = y
 
 		self.set_accels_for_action('app.quit', ['Escape'])
 		self.set_accels_for_action('app.prev', ['Up'])
@@ -377,8 +374,8 @@ class GlobalMenu(Gtk.Application):
 		self.dbus_menu.activate(self.commands.select_value)
 		self.on_hide_window()
 
-	def on_menu_activated(self, menu: str, x=-1):
-		x = self.HORIZONTAL_OFFSET / Gdk.Display.get_default().get_monitor(0).get_scale_factor()
+	def on_menu_activated(self, menu: str, x: int):
+		x /= Gdk.Display.get_default().get_monitor(0).get_scale_factor()
 		self.window.set_custom_position(x)
 		if len(menu) > 1:
 			self.window.open_menu_by_name(menu)

@@ -261,6 +261,7 @@ class DbusMenu:
 		self.window = WindowManager.new_window()
 		self._init_window()
 		self._listen_menu_activated()
+		self._width_offset = 400;
 		WindowManager.add_listener(self.on_window_switched)
 
 	def _init_window(self):
@@ -277,14 +278,16 @@ class DbusMenu:
 		signal = proxy.connect_to_signal("MenuActivated", self.on_menu_activated)
 
 	def on_menu_activated(self, menu, x):
+		if x != -1:
+			self._width_offset = x
 		if self.app is None:
-			self.app = GlobalMenu(self, menu, x)
+			self.app = GlobalMenu(self, menu, self._width_offset)
 			self.app.connect('shutdown', self.on_app_shutdown)
 			self.app.run()
 
 	def on_keybind_activated(self, character):
 		if self.app is None:
-			self.app = GlobalMenu(self, character)
+			self.app = GlobalMenu(self, character, self._width_offset)
 			self.app.connect('shutdown', self.on_app_shutdown)
 			self.app.run()
 

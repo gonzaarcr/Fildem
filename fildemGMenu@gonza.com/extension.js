@@ -12,6 +12,13 @@ const PanelMenu = imports.ui.panelMenu;
 const WindowMenu = imports.ui.windowMenu;
 
 
+function log(msg) {
+	const debug = true;
+	if (debug)
+		global.log('[FILDEM_MENU] ' + msg);
+}
+
+
 const WindowActions = class WindowActions {
 	constructor() {
 		this._win = global.display.get_focus_window();
@@ -192,11 +199,11 @@ const WindowActions = class WindowActions {
 var MenuButton = GObject.registerClass(
 class MenuButton extends PanelMenu.Button {
 
-	_init(label, proxy) {
+	_init(label, menuBar) {
 		label = label.replace('_', '');
 		super._init(0.0, label);
 		this._label = label;
-		this._proxy = proxy;
+		this._menuBar = menuBar;
 
 		this.box = new St.BoxLayout({style_class: 'panel-status-menu-box menubar-button'});
 		this.labelWidget = new St.Label({
@@ -211,12 +218,13 @@ class MenuButton extends PanelMenu.Button {
 	}
 
 	onButtonEvent(actor, event) {
-		if (event.get_button() == 1) {
-			let x = this.get_parent().x;
-			let label = this._label;
-			this._proxy.EchoSignal(label, x);
-		}
+		if (event.get_button() !== 1)
+			return Clutter.EVENT_PROPAGATE;
+
+		this._menuBar.onButtonClicked(this._label);
+		return Clutter.EVENT_STOP;
 	}
+
 	/*
 	vfunc_event(event) {
 		if (!(event.type() === Clutter.EventType.BUTTON_PRESS && event.get_button() == 1))
@@ -259,7 +267,7 @@ const MenuBar = class MenuBar {
 	}
 
 	addMenuButton(label) {
-		let menuButton = new MenuButton(label, this._proxy);
+		let menuButton = new MenuButton(label, this);
 		this._menuButtons.push(menuButton);
 		const nItems = Main.panel._leftBox.get_children().length;
 		menuButton.hide();
@@ -283,12 +291,20 @@ const MenuBar = class MenuBar {
 		for (let el of Main.panel._leftBox.get_children()) {
 			let firstChild = el.get_first_child();
 			if (firstChild.constructor.name == 'AppMenuButton') {
-				firstChild.set_width(this.WIDTH_OFFSET - width);
+				firstChild.set_width(150);
+				this.WIDTH_OFFSET = width + 150;
 				break;
 			}
 			if (el.is_visible()) {
 				width += el.get_width();
 			}
+			// DEBUG
+			let dbg_len = Main.panel._leftBox.get_children().length;
+			let dbg_lastEl = Main.panel._leftBox.get_children()[dbg_len - 1];
+			if (el === dbg_lastEl) {
+				log("There's no AppMenuButton, the menu probably will be in the middle of the screen");
+			}
+			// --DEBUG
 		}
 		this._menuButtons.forEach(btn => btn.show());
 	}
@@ -303,6 +319,10 @@ const MenuBar = class MenuBar {
 				firstChild.set_width(-1);
 			}
 		}
+	}
+
+	onButtonClicked(label) {
+		this._proxy.EchoSignal(label, this.WIDTH_OFFSET);
 	}
 
 	removeAll() {
@@ -419,8 +439,8 @@ class MyProxy {
 
 	async _onProxyReady(result, error) {
 		let id = undefined;
-		id = this._proxy.connectSignal('MenuActivated', this._onMenuActivated.bind(this));
-		this._handlerIds.push(id);
+		// id = this._proxy.connectSignal('MenuActivated', this._onMenuActivated.bind(this));
+		// this._handlerIds.push(id);
 		id = this._proxy.connectSignal('SendTopLevelMenus', this._onSendTopLevelMenus.bind(this));
 		this._handlerIds.push(id);
 		id = this._proxy.connectSignal('RequestWindowActionsSignal', this._onRequestWindowActionsSignal.bind(this));
@@ -429,7 +449,6 @@ class MyProxy {
 		this._handlerIds.push(id);
 		// this.handlerId2 = this._proxy.connect('g-signal', this._onSignalReceive.bind(this));
 		// this.handlerId2 = this._proxy.connect('g-properties-changed', this._onPropertiesChanged.bind(this));
-
 	}
 
 	async _onMenuActivated(proxy, nameOwner, args) {
