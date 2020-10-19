@@ -211,10 +211,19 @@ class MenuButton extends PanelMenu.Button {
 			y_align: Clutter.ActorAlign.CENTER,
 			reactive: true
 		});
-		this.set_style('-natural-hpadding: 5px; -minimum-hpadding: 3px;');
-		this.box.add_actor(this.labelWidget);
+		/* on shell theme
+		#panel #panelLeft { spacing: 0px; }
+		#panel #panelLeft .panel-button { spacing: 0px; }
+		*/
+		this.box.add_child(this.labelWidget);
 		this.add_child(this.box);
 		this.connect('button-release-event', this.onButtonEvent.bind(this));
+	}
+
+	_onStyleChanged(actor) {
+		super._onStyleChanged(actor);
+		this._minHPadding = 6;
+		this._natHPadding = 10;
 	}
 
 	onButtonEvent(actor, event) {
@@ -255,6 +264,7 @@ const MenuBar = class MenuBar {
 		this._proxy = proxy;
 		// pixels from x_0 to the start of the menu
 		this.WIDTH_OFFSET = 400;
+		this.MARGIN_FIRST_ELEMENT = 4;
 		this._isShowingMenu = false;
 
 		// this._appStateChangedId = AppSystem.connect('app-state-changed', this._syncVisible.bind(this));
@@ -268,11 +278,13 @@ const MenuBar = class MenuBar {
 		Main.panel.connect('leave-event', this._onPanelLeave.bind(this));
 	}
 
-	addMenuButton(label) {
+	addMenuButton(label, setmargin) {
 		let menuButton = new MenuButton(label, this);
 		this._menuButtons.push(menuButton);
 		const nItems = Main.panel._leftBox.get_children().length;
 		menuButton.hide();
+		if (setmargin)
+			menuButton.set_style('margin-left: '+ this.MARGIN_FIRST_ELEMENT + 'px')
 		Main.panel.addToStatusArea(label, menuButton, nItems, 'left');
 	}
 
@@ -280,9 +292,11 @@ const MenuBar = class MenuBar {
 		if (menus.length == 0) {
 			this._onPanelLeave();
 		}
-		this.removeAll();
+		let first = true;
 		for (let menu of menus) {
 			this.addMenuButton(menu);
+			this.addMenuButton(menu, first);
+			first = false;
 		}
 	}
 
