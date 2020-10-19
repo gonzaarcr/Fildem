@@ -255,11 +255,13 @@ const MenuBar = class MenuBar {
 		this._proxy = proxy;
 		// pixels from x_0 to the start of the menu
 		this.WIDTH_OFFSET = 400;
+		this._isShowingMenu = false;
 
 		// this._appStateChangedId = AppSystem.connect('app-state-changed', this._syncVisible.bind(this));
 		// this._notifyFocusAppId = WinTracker.connect('notify::focus-app', this._syncVisible.bind(this));
 		this._notifyFocusWinId = global.display.connect('notify::focus-window', this._syncVisible.bind(this));
 		this._proxy.listeners['SendTopLevelMenus'].push(this.setMenus.bind(this));
+		this._proxy.listeners['MenuClosed'].push(this._hidePanel.bind(this));
 		Main.panel.reactive = true;
 		Main.panel.track_hover = true;
 		Main.panel.connect('enter-event', this._onPanelEnter.bind(this));
@@ -312,6 +314,9 @@ const MenuBar = class MenuBar {
 	_onPanelLeave() {
 		if (this._menuButtons.length == 0)
 			return;
+		if (this._isShowingMenu)
+			return
+
 		this._menuButtons.forEach(btn => btn.hide());
 		for (let el of Main.panel._leftBox.get_children()) {
 			let firstChild = el.get_first_child();
@@ -321,7 +326,13 @@ const MenuBar = class MenuBar {
 		}
 	}
 
+	_hidePanel() {
+		this._isShowingMenu = false;
+		this._onPanelLeave();
+	}
+
 	onButtonClicked(label) {
+		this._isShowingMenu = true;
 		this._proxy.EchoSignal(label, this.WIDTH_OFFSET);
 	}
 
@@ -386,6 +397,9 @@ const ifaceXml = `
 	  <arg name="x" type="u"/>
 	</signal>
 
+	<method name="EchoMenuClosed"/>
+	<signal name="MenuClosed"/>
+
 	<method name="SendTopLevelMenus">
 	  <arg name="top_level_menus" type="as" direction="in"/>
 	</method>
@@ -433,7 +447,8 @@ class MyProxy {
 		);
 		this.listeners = {
 			'MenuActivated': [],
-			'SendTopLevelMenus': []
+			'SendTopLevelMenus': [],
+			'MenuClosed': []
 		}
 	}
 
@@ -446,6 +461,8 @@ class MyProxy {
 		id = this._proxy.connectSignal('RequestWindowActionsSignal', this._onRequestWindowActionsSignal.bind(this));
 		this._handlerIds.push(id);
 		id = this._proxy.connectSignal('ActivateWindowActionSignal', this._onActivateWindowActionSignal.bind(this));
+		this._handlerIds.push(id);
+		id = this._proxy.connectSignal('MenuClosed', this._onMenuClosed.bind(this));
 		this._handlerIds.push(id);
 		// this.handlerId2 = this._proxy.connect('g-signal', this._onSignalReceive.bind(this));
 		// this.handlerId2 = this._proxy.connect('g-properties-changed', this._onPropertiesChanged.bind(this));
@@ -470,6 +487,12 @@ class MyProxy {
 
 	async _onActivateWindowActionSignal(proxy, nameOwner, args) {
 		this._currentWindow._doAction(args[0]);
+	}
+
+	async _onMenuClosed(proxy, nameOwner, args) {
+		for (let callback of this.listeners['MenuClosed']) {
+			callback();
+		}
 	}
 
 	async _onPropertiesChanged(sender_name, invalidated_properties) {

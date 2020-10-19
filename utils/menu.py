@@ -292,6 +292,8 @@ class DbusMenu:
 			self.app.run()
 
 	def on_app_shutdown(self, app):
+		self.proxy = dbus.SessionBus().get_object(MyService.BUS_NAME, MyService.BUS_PATH)
+		self.proxy.EchoMenuClosed()
 		self.app = None
 
 	def _handle_shortcuts(self, top_level_menus):

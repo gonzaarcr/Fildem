@@ -288,7 +288,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 		self.set_opacity(1)
 
 	def make_transparent(self):
-		self.set_opacity(1)
+		self.set_opacity(0)
 
 	def on_enter_event(self, widget, event):
 		pass
