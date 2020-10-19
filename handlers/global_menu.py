@@ -8,7 +8,6 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Gio
 
-from utils.theme import get_panel_background_colour
 
 def get_separator():
 	return u'\u0020\u0020\u00BB\u0020\u0020'
@@ -226,9 +225,6 @@ class CommandWindow(Gtk.ApplicationWindow):
 		settings.set_property('gtk-application-prefer-dark-theme', True)
 
 	def set_custom_styles(self):
-		bg_colour = get_panel_background_colour()
-		if bg_colour is None:
-			bg_colour = '1d1d1d'
 		styles = """entry.search.flat { border: 0; outline: 0;
 			border-image: none; box-shadow: none; }
 
@@ -240,7 +236,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 
 			scrollbar { opacity: 0; }
 
-			menubar { background-color: #"""+ bg_colour +"""; }
+			menubar { background-color: #1d1d1d; }
 			menubar > menuitem { min-height: 1em; }
 
 			window decoration { box-shadow: none; border-color: @borders;
