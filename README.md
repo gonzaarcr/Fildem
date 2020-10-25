@@ -40,3 +40,15 @@ And the configure the following files:
 [Settings]
 gtk-modules="appmenu-gtk-module"
 ```
+
+## Customization
+
+In some gnome themes, the buttons have a small spacing beetween them. This can make the buttons easy to miss and unfocusing our window if it’s not maximized. To fix this, add this somewhere on your `gnome-shell.css` theme:
+
+```
+#panel #panelLeft {
+  spacing: 0px; }
+#panel #panelLeft .panel-button {
+  spacing: 0px; }
+```
+
