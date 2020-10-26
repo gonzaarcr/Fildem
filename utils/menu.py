@@ -113,7 +113,7 @@ class DbusGtkMenu(object):
 				if ':submenu' in menu:
 					self.collect_entries(menu[':submenu'], menu_path)
 				elif 'action' in menu:
-					self.actions[menu_item.text] = menu_item.action
+					self.actions[menu_item.text.replace('_', '')] = menu_item.action
 					self.items.append(menu_item)
 
 			elif ':section' in menu:
@@ -249,7 +249,7 @@ class DbusAppMenu(object):
 				self.collect_entries(child, menu_path)
 
 		elif bool(menu_item.label) or menu_item.separator:
-			self.actions[menu_item.text] = menu_item.action
+			self.actions[menu_item.text.replace('_', '')] = menu_item.action
 			self.items.append(menu_item)
 
 class DbusMenu:

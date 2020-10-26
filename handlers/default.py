@@ -196,7 +196,6 @@ class CommandList(Gtk.ListBox):
 		return item.visibility()
 
 	def do_list_item(self, value, index):
-		value = value.replace('_', '')
 		command = CommandListItem(value=value, index=index)
 
 		self.append_visible_row(command)
