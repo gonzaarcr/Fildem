@@ -399,7 +399,8 @@ class WindowActions(object):
 			self.listeners.append(callback)
 
 		session = dbus.SessionBus()
-		self.proxy  = session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
+		self.proxy = session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
+		self.actions = []
 		signal = self.proxy.connect_to_signal("ListWindowActionsSignal", self.on_actions_receive)
 
 	def request_window_actions(self):
