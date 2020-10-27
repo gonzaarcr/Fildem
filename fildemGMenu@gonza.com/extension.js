@@ -292,9 +292,9 @@ const MenuBar = class MenuBar {
 		if (menus.length == 0) {
 			this._onPanelLeave();
 		}
+		this.removeAll();
 		let first = true;
 		for (let menu of menus) {
-			this.addMenuButton(menu);
 			this.addMenuButton(menu, first);
 			first = false;
 		}
