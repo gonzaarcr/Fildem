@@ -18,6 +18,15 @@ function log(msg) {
 		global.log('[FILDEM_MENU] ' + msg);
 }
 
+/// VARIABLES THAT MIGHT BE INTERESTING TO CUSTOMIZE
+// Distance between buttons
+const MIN_PADDING = 6;
+const NAT_PADDING = 10;
+// This is the appmenu button from default gnome
+const GNOME_APPMENU_WIDTH = 150;
+// Doesn't hide the menu
+const FORCE_SHOW_MENU = false;
+
 
 const WindowActions = class WindowActions {
 	constructor() {
@@ -211,10 +220,6 @@ class MenuButton extends PanelMenu.Button {
 			y_align: Clutter.ActorAlign.CENTER,
 			reactive: true
 		});
-		/* on shell theme
-		#panel #panelLeft { spacing: 0px; }
-		#panel #panelLeft .panel-button { spacing: 0px; }
-		*/
 		this.box.add_child(this.labelWidget);
 		this.add_child(this.box);
 		this.connect('button-release-event', this.onButtonEvent.bind(this));
@@ -222,8 +227,8 @@ class MenuButton extends PanelMenu.Button {
 
 	_onStyleChanged(actor) {
 		super._onStyleChanged(actor);
-		this._minHPadding = 6;
-		this._natHPadding = 10;
+		this._minHPadding = MIN_PADDING;
+		this._natHPadding = NAT_PADDING;
 	}
 
 	onButtonEvent(actor, event) {
@@ -234,20 +239,6 @@ class MenuButton extends PanelMenu.Button {
 		return Clutter.EVENT_STOP;
 	}
 
-	/*
-	vfunc_event(event) {
-		if (!(event.type() === Clutter.EventType.BUTTON_PRESS && event.get_button() == 1))
-			return Clutter.EVENT_PROPAGATE;
-
-		let style = this.get_style()
-		global.log(style)
-		if (style == '') {
-			this.set_style('box-shadow: inset 0 -2px 0 0 #e95825; background-color: rgba(0, 0, 0, 0.01);')
-		} else {
-			this.set_style('')
-		}
-		return Clutter.EVENT_STOP;
-	}*/
 	/*
 	destroy()
 	{
@@ -263,12 +254,10 @@ const MenuBar = class MenuBar {
 		this._menuButtons = [];
 		this._proxy = proxy;
 		// pixels from x_0 to the start of the menu
-		this.WIDTH_OFFSET = 400;
+		this._width_offset = 400;
 		this.MARGIN_FIRST_ELEMENT = 4;
 		this._isShowingMenu = false;
 
-		// this._appStateChangedId = AppSystem.connect('app-state-changed', this._syncVisible.bind(this));
-		// this._notifyFocusAppId = WinTracker.connect('notify::focus-app', this._syncVisible.bind(this));
 		this._notifyFocusWinId = global.display.connect('notify::focus-window', this._syncVisible.bind(this));
 		this._proxy.listeners['SendTopLevelMenus'].push(this.setMenus.bind(this));
 		this._proxy.listeners['MenuClosed'].push(this._hidePanel.bind(this));
@@ -307,8 +296,8 @@ const MenuBar = class MenuBar {
 		for (let el of Main.panel._leftBox.get_children()) {
 			let firstChild = el.get_first_child();
 			if (firstChild.constructor.name == 'AppMenuButton') {
-				firstChild.set_width(150);
-				this.WIDTH_OFFSET = width + 150;
+				firstChild.set_width(GNOME_APPMENU_WIDTH);
+				this._width_offset = width + GNOME_APPMENU_WIDTH;
 				break;
 			}
 			if (el.is_visible()) {
@@ -328,8 +317,8 @@ const MenuBar = class MenuBar {
 	_onPanelLeave() {
 		if (this._menuButtons.length == 0)
 			return;
-		if (this._isShowingMenu)
-			return
+		if (this._isShowingMenu || FORCE_SHOW_MENU)
+			return;
 
 		this._menuButtons.forEach(btn => btn.hide());
 		for (let el of Main.panel._leftBox.get_children()) {
@@ -347,7 +336,7 @@ const MenuBar = class MenuBar {
 
 	onButtonClicked(label) {
 		this._isShowingMenu = true;
-		this._proxy.EchoSignal(label, this.WIDTH_OFFSET);
+		this._proxy.EchoSignal(label, this._width_offset);
 	}
 
 	removeAll() {
@@ -468,8 +457,6 @@ class MyProxy {
 
 	async _onProxyReady(result, error) {
 		let id = undefined;
-		// id = this._proxy.connectSignal('MenuActivated', this._onMenuActivated.bind(this));
-		// this._handlerIds.push(id);
 		id = this._proxy.connectSignal('SendTopLevelMenus', this._onSendTopLevelMenus.bind(this));
 		this._handlerIds.push(id);
 		id = this._proxy.connectSignal('RequestWindowActionsSignal', this._onRequestWindowActionsSignal.bind(this));
@@ -478,8 +465,6 @@ class MyProxy {
 		this._handlerIds.push(id);
 		id = this._proxy.connectSignal('MenuClosed', this._onMenuClosed.bind(this));
 		this._handlerIds.push(id);
-		// this.handlerId2 = this._proxy.connect('g-signal', this._onSignalReceive.bind(this));
-		// this.handlerId2 = this._proxy.connect('g-properties-changed', this._onPropertiesChanged.bind(this));
 	}
 
 	async _onMenuActivated(proxy, nameOwner, args) {
@@ -509,16 +494,8 @@ class MyProxy {
 		}
 	}
 
-	async _onPropertiesChanged(sender_name, invalidated_properties) {
-		global.log(`_onPropertiesChanged ${sender_name}  ${invalidated_properties}`)
-	}
-	
 	_onNameOwnerChanged(proxy, sender, [name, oldOwner, newOwner]) {
 		global.log(`${name} ${oldOwner} ${newOwner}`)
-	}
-
-	_onSignalReceive(proxy, signal_name, args) {
-		global.log(`signal_name: ${signal_name} args: ${args[0]}`);
 	}
 
 	WindowSwitched(windowData) {
