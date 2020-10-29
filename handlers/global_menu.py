@@ -374,9 +374,12 @@ class GlobalMenu(Gtk.Application):
 		self.dbus_menu.activate(self.commands.select_value)
 		self.on_hide_window()
 
-	def on_menu_activated(self, menu: str, x: int):
+	def move_window(self, x: int):
 		x /= Gdk.Display.get_default().get_monitor(0).get_scale_factor()
 		self.window.set_custom_position(x)
+
+	def on_menu_activated(self, menu: str, x: int):
+		self.move_window(x)
 		if len(menu) > 1:
 			self.window.open_menu_by_name(menu)
 		else:
