@@ -43,6 +43,12 @@ gtk-modules="appmenu-gtk-module"
 
 ## Customization
 
+# Menu always visible
+
+If you don’t want to have to hover the menu to view it, change `FORCE_SHOW_MENU` in `extension.js` to `true`, and reload the shell (Alt+F2, r).
+
+# Remove space in between buttons
+
 In some gnome themes, the buttons have a small spacing beetween them. This can make the buttons easy to miss and unfocusing our window if it’s not maximized. To fix this, add this somewhere on your `gnome-shell.css` theme:
 
 ```
@@ -51,4 +57,3 @@ In some gnome themes, the buttons have a small spacing beetween them. This can m
 #panel #panelLeft .panel-button {
   spacing: 0px; }
 ```
-
