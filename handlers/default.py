@@ -17,7 +17,7 @@ from utils.menu import WindowActions
 
 
 def normalize_markup(text):
-	return text.replace('&', '&amp;')
+	return text.replace('_', '').replace('&', '&amp;')
 
 
 def run_generator(function):
