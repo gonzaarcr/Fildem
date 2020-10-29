@@ -255,7 +255,7 @@ class DbusAppMenu(object):
 class DbusMenu:
 
 	def __init__(self):
-		self.keyb = MyKeybinder(self.on_keybind_activated)
+		self.keyb = GlobalKeybinder(self.on_keybind_activated)
 		self.app = None
 		self.session = dbus.SessionBus()
 		self.window = WindowManager.new_window()
@@ -368,9 +368,12 @@ class DbusMenu:
 			print('Gnome HUD: WARNING: (%s) %s' % (promt, alert))
 
 
-class MyKeybinder(object):
+class GlobalKeybinder(object):
+	"""
+	Global keybinder for mnemonic, like Alt+F for files, etc.
+	"""
 	def __init__(self, callback=None):
-		super(MyKeybinder, self).__init__()
+		super(GlobalKeybinder, self).__init__()
 		Keybinder.init()
 		self.keybinding_strings = []
 		self.keybinder_callback = callback
