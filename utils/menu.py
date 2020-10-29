@@ -277,17 +277,17 @@ class DbusMenu:
 		proxy  = self.session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
 		signal = proxy.connect_to_signal("MenuActivated", self.on_menu_activated)
 
-	def on_menu_activated(self, menu, x):
+	def on_menu_activated(self, menu: str, x: int):
 		if x != -1:
 			self._width_offset = x
-		if self.app is None:
-			self.app = GlobalMenu(self, menu, self._width_offset)
-			self.app.connect('shutdown', self.on_app_shutdown)
-			self.app.run()
+		self._start_app(menu)
 
-	def on_keybind_activated(self, character):
+	def on_keybind_activated(self, character: str):
+		self._start_app(character)
+
+	def _start_app(self, menu_activated: str):
 		if self.app is None:
-			self.app = GlobalMenu(self, character, self._width_offset)
+			self.app = GlobalMenu(self, menu_activated, self._width_offset)
 			self.app.connect('shutdown', self.on_app_shutdown)
 			self.app.run()
 
