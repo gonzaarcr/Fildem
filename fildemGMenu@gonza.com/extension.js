@@ -254,7 +254,7 @@ const MenuBar = class MenuBar {
 		this._menuButtons = [];
 		this._proxy = proxy;
 		// pixels from x_0 to the start of the menu
-		this._width_offset = 400;
+		this._width_offset = 300;
 		this.MARGIN_FIRST_ELEMENT = 4;
 		this._isShowingMenu = false;
 
