@@ -260,7 +260,7 @@ const MenuBar = class MenuBar {
 
 		this._notifyFocusWinId = global.display.connect('notify::focus-window', this._syncVisible.bind(this));
 		this._proxy.listeners['SendTopLevelMenus'].push(this.setMenus.bind(this));
-		this._proxy.listeners['MenuClosed'].push(this._hidePanel.bind(this));
+		this._proxy.listeners['MenuOnOff'].push(this._onMenuOnOff.bind(this));
 		Main.panel.reactive = true;
 		Main.panel.track_hover = true;
 		Main.panel.connect('enter-event', this._onPanelEnter.bind(this));
@@ -326,6 +326,15 @@ const MenuBar = class MenuBar {
 			if (firstChild.constructor.name == 'AppMenuButton') {
 				firstChild.set_width(-1);
 			}
+		}
+	}
+
+	_onMenuOnOff(on) {
+		if (on) {
+			this._onPanelEnter();
+			this.onButtonClicked('__fildem_move', this._width_offset);
+		} else {
+			this._hidePanel();
 		}
 	}
 
@@ -400,8 +409,12 @@ const ifaceXml = `
 	  <arg name="x" type="u"/>
 	</signal>
 
-	<method name="EchoMenuClosed"/>
-	<signal name="MenuClosed"/>
+	<method name="EchoMenuOnOff">
+	  <arg name="on" type="b" direction="in"/>
+	</method>
+	<signal name="MenuOnOff">
+	  <arg name="on" type="b"/>
+	</signal>
 
 	<method name="SendTopLevelMenus">
 	  <arg name="top_level_menus" type="as" direction="in"/>
@@ -451,7 +464,7 @@ class MyProxy {
 		this.listeners = {
 			'MenuActivated': [],
 			'SendTopLevelMenus': [],
-			'MenuClosed': []
+			'MenuOnOff': []
 		}
 	}
 
@@ -463,7 +476,7 @@ class MyProxy {
 		this._handlerIds.push(id);
 		id = this._proxy.connectSignal('ActivateWindowActionSignal', this._onActivateWindowActionSignal.bind(this));
 		this._handlerIds.push(id);
-		id = this._proxy.connectSignal('MenuClosed', this._onMenuClosed.bind(this));
+		id = this._proxy.connectSignal('MenuOnOff', this._onMenuOnOff.bind(this));
 		this._handlerIds.push(id);
 	}
 
@@ -488,9 +501,9 @@ class MyProxy {
 		this._currentWindow._doAction(args[0]);
 	}
 
-	async _onMenuClosed(proxy, nameOwner, args) {
-		for (let callback of this.listeners['MenuClosed']) {
-			callback();
+	async _onMenuOnOff(proxy, nameOwner, args) {
+		for (let callback of this.listeners['MenuOnOff']) {
+			callback(args[0]);
 		}
 	}
 

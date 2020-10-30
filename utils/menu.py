@@ -278,12 +278,23 @@ class DbusMenu:
 		signal = proxy.connect_to_signal("MenuActivated", self.on_menu_activated)
 
 	def on_menu_activated(self, menu: str, x: int):
+		if menu == '__fildem_move':
+			self._move_menu(x)
+			return
+
 		if x != -1:
 			self._width_offset = x
 		self._start_app(menu)
 
 	def on_keybind_activated(self, character: str):
+		self.on_app_started()
 		self._start_app(character)
+
+	def _move_menu(self, x: int):
+		if self.app is None:
+			return
+
+		self.app.move_window(x) 
 
 	def _start_app(self, menu_activated: str):
 		if self.app is None:
@@ -291,10 +302,16 @@ class DbusMenu:
 			self.app.connect('shutdown', self.on_app_shutdown)
 			self.app.run()
 
+	def on_app_started(self):
+		self._echo_onoff(True)
+
 	def on_app_shutdown(self, app):
-		self.proxy = dbus.SessionBus().get_object(MyService.BUS_NAME, MyService.BUS_PATH)
-		self.proxy.EchoMenuClosed()
+		self._echo_onoff(False)
 		self.app = None
+
+	def _echo_onoff(self, on: bool):
+		self.proxy = dbus.SessionBus().get_object(MyService.BUS_NAME, MyService.BUS_PATH)
+		self.proxy.EchoMenuOnOff(on)
 
 	def _handle_shortcuts(self, top_level_menus):
 		self.keyb.remove_all_keybindings()

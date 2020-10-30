@@ -81,12 +81,12 @@ class MyService(dbus.service.Object):
 	def SendTopLevelMenus(self, top_level_menus):
 		pass
 
-	@dbus.service.method(BUS_NAME)
-	def EchoMenuClosed(self):
-		self.MenuClosed()
+	@dbus.service.method(BUS_NAME, in_signature='b')
+	def EchoMenuOnOff(self, on):
+		self.MenuOnOff(on)
 
-	@dbus.service.signal(BUS_NAME)
-	def MenuClosed(self):
+	@dbus.service.signal(BUS_NAME, signature='b')
+	def MenuOnOff(self, on):
 		pass
 
 	# Window action stuff (the menu on alt-space)
