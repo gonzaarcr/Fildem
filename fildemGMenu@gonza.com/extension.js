@@ -258,13 +258,16 @@ const MenuBar = class MenuBar {
 		this.MARGIN_FIRST_ELEMENT = 4;
 		this._isShowingMenu = false;
 
-		this._notifyFocusWinId = global.display.connect('notify::focus-window', this._syncVisible.bind(this));
+		this._notifyFocusWinId = global.display.connect('notify::focus-window', this._onWindowSwitched.bind(this));
 		this._proxy.listeners['SendTopLevelMenus'].push(this.setMenus.bind(this));
 		this._proxy.listeners['MenuOnOff'].push(this._onMenuOnOff.bind(this));
 		Main.panel.reactive = true;
 		Main.panel.track_hover = true;
 		Main.panel.connect('enter-event', this._onPanelEnter.bind(this));
 		Main.panel.connect('leave-event', this._onPanelLeave.bind(this));
+		
+		Main.overview.connect('showing', this._onOverviewOpened.bind(this))
+		Main.overview.connect('hiding', this._onOverviewClosed.bind(this))
 	}
 
 	addMenuButton(label, setmargin) {
@@ -278,8 +281,10 @@ const MenuBar = class MenuBar {
 	}
 
 	setMenus(menus) {
-		if (menus.length == 0) {
-			this._onPanelLeave();
+		// The expansion/shrink can be annoying, so we only do it
+		// when there’s no menus
+		if (menus.length === 0) {
+			this._hideMenu();
 		}
 		this.removeAll();
 		let first = true;
@@ -287,11 +292,19 @@ const MenuBar = class MenuBar {
 			this.addMenuButton(menu, first);
 			first = false;
 		}
+		if (FORCE_SHOW_MENU && !Main.overview.visibleTarget) {
+			this._onPanelEnter();
+		}
 	}
 
 	_onPanelEnter() {
-		if (this._menuButtons.length == 0)
+		if (this._menuButtons.length === 0)
 			return;
+
+		this._showMenu();
+	}
+
+	_showMenu() {
 		let width = 0;
 		for (let el of Main.panel._leftBox.get_children()) {
 			let firstChild = el.get_first_child();
@@ -303,23 +316,18 @@ const MenuBar = class MenuBar {
 			if (el.is_visible()) {
 				width += el.get_width();
 			}
-			// DEBUG
-			let dbg_len = Main.panel._leftBox.get_children().length;
-			let dbg_lastEl = Main.panel._leftBox.get_children()[dbg_len - 1];
-			if (el === dbg_lastEl) {
-				log("There's no AppMenuButton, the menu probably will be in the middle of the screen");
-			}
-			// --DEBUG
 		}
 		this._menuButtons.forEach(btn => btn.show());
 	}
 
 	_onPanelLeave() {
-		if (this._menuButtons.length == 0)
-			return;
 		if (this._isShowingMenu || FORCE_SHOW_MENU)
 			return;
 
+		this._hideMenu();
+	}
+
+	_hideMenu() {
 		this._menuButtons.forEach(btn => btn.hide());
 		for (let el of Main.panel._leftBox.get_children()) {
 			let firstChild = el.get_first_child();
@@ -334,13 +342,9 @@ const MenuBar = class MenuBar {
 			this._onPanelEnter();
 			this.onButtonClicked('__fildem_move', this._width_offset);
 		} else {
-			this._hidePanel();
+			this._isShowingMenu = false;
+			this._onPanelLeave();
 		}
-	}
-
-	_hidePanel() {
-		this._isShowingMenu = false;
-		this._onPanelLeave();
 	}
 
 	onButtonClicked(label) {
@@ -355,7 +359,7 @@ const MenuBar = class MenuBar {
 		this._menuButtons = [];
 	}
 
-	_syncVisible() {
+	_onWindowSwitched() {
 		const overview = Main.overview.visibleTarget;
 		const focusApp = WinTracker.focus_app || Main.panel.statusArea.appMenu._targetApp;
 		if (focusApp) {
@@ -375,7 +379,18 @@ const MenuBar = class MenuBar {
 				}
 			}
 			this._proxy.WindowSwitched(windowData);
+		} else {
+			this._hideMenu();
 		}
+	}
+
+	_onOverviewOpened() {
+		this._hideMenu();
+	}
+
+	_onOverviewClosed() {
+		if (FORCE_SHOW_MENU)
+			this._showMenu();
 	}
 
 	_disconnectAll() {
