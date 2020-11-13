@@ -218,7 +218,7 @@ class DbusAppMenu(object):
 			results = self.interface.GetLayout(0, -1, ['children-display'])
 			self.expand_menus(results[1])
 
-			results = self.interface.GetLayout(0, -1, ['label'])
+			results = self.interface.GetLayout(0, -1, [])
 			self.collect_entries(results[1], [])
 
 	def expand_menus(self, item=None):
