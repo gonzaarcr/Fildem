@@ -261,7 +261,7 @@ class DbusMenu:
 		self.window = WindowManager.new_window()
 		self._init_window()
 		self._listen_menu_activated()
-		self._width_offset = 300;
+		self._width_offset = 300
 		WindowManager.add_listener(self.on_window_switched)
 
 	def _init_window(self):
