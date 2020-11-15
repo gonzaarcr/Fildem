@@ -195,6 +195,19 @@ class DbusAppMenu(object):
 
 	def activate(self, selection):
 		action = self.actions[selection]
+		try:
+			self.interface.Event(action, 'clicked', 0, 0)
+		except Exception as e:
+			self.retry_activate(selection)
+
+	def retry_activate(self, selection):
+		# Electron apps change a lot their menus, we have to update to retry
+		self.actions = {}
+		self.accels = {}
+		self.items = []
+		results = self.interface.GetLayout(0, -1, [])
+		self.collect_entries(results[1], [])
+		action = self.actions[selection]
 		self.interface.Event(action, 'clicked', 0, 0)
 
 	def get_interface(self):
@@ -215,31 +228,18 @@ class DbusAppMenu(object):
 
 	def get_results(self):
 		if self.interface:
-			results = self.interface.GetLayout(0, -1, ['children-display'])
-			self.expand_menus(results[1])
-
 			results = self.interface.GetLayout(0, -1, [])
 			self.collect_entries(results[1], [])
-
-	def expand_menus(self, item=None):
-		item_id    = item[0]
-		item_props = item[1]
-
-		if 'children-display' in item_props:
-			try:
-				self.interface.AboutToShow(item_id)
-				self.interface.Event(item_id, 'opened', 'not used', dbus.UInt32(time.time()))
-			except dbus.exceptions.DBusException:
-				# import traceback; traceback.print_exc()
-				pass
-
-		if len(item[2]):
-			for child in item[2]:
-				self.expand_menus(child)
 
 	def collect_entries(self, item=None, labels=[]):
 		menu_item = DbusAppMenuItem(item, labels)
 		menu_path = labels
+
+		if 'children-display' in item[1]:
+			item_id = item[0]
+			self.interface.AboutToShow(item_id)
+			self.interface.Event(item_id, 'opened', 'not used', dbus.UInt32(time.time()))
+			item = self.interface.GetLayout(item_id, -1, [])[1]
 
 		if bool(menu_item.label) and menu_item.label != 'Root':
 			menu_path = labels + [menu_item.label]
