@@ -205,7 +205,7 @@ class DbusAppMenu(object):
 		self.actions = {}
 		self.accels = {}
 		self.items = []
-		results = self.interface.GetLayout(0, -1, [])
+		results = self.interface.GetLayout(0, -1, dbus.Array(signature="s"))
 		self.collect_entries(results[1], [])
 		action = self.actions[selection]
 		self.interface.Event(action, 'clicked', 0, 0)
@@ -228,7 +228,7 @@ class DbusAppMenu(object):
 
 	def get_results(self):
 		if self.interface:
-			results = self.interface.GetLayout(0, -1, [])
+			results = self.interface.GetLayout(0, -1, dbus.Array(signature="s"))
 			self.collect_entries(results[1], [])
 
 	def collect_entries(self, item=None, labels=[]):
@@ -239,7 +239,7 @@ class DbusAppMenu(object):
 			item_id = item[0]
 			self.interface.AboutToShow(item_id)
 			self.interface.Event(item_id, 'opened', 'not used', dbus.UInt32(time.time()))
-			item = self.interface.GetLayout(item_id, -1, [])[1]
+			item = self.interface.GetLayout(item_id, -1, dbus.Array(signature="s"))[1]
 
 		if bool(menu_item.label) and menu_item.label != 'Root':
 			menu_path = labels + [menu_item.label]
