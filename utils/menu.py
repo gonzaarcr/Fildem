@@ -229,7 +229,10 @@ class DbusAppMenu(object):
 	def get_results(self):
 		if self.interface:
 			results = self.interface.GetLayout(0, -1, dbus.Array(signature="s"))
-			self.collect_entries(results[1], [])
+			try:
+				self.collect_entries(results[1], [])
+			except Exception:
+				pass
 
 	def collect_entries(self, item=None, labels=[]):
 		menu_item = DbusAppMenuItem(item, labels)
