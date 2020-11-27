@@ -132,7 +132,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 		self.app = kwargs['application']
 		self.seat = Gdk.Display.get_default().get_default_seat()
 
-		self.set_size_request(750, -1)
+		self.set_size_request(-1, -1)
 		self.set_keep_above(True)
 		self.set_resizable(False)
 
@@ -158,8 +158,6 @@ class CommandWindow(Gtk.ApplicationWindow):
 
 		self.connect('show', self.on_window_show)
 		self.connect('button-press-event', self.on_button_press_event)
-		self.connect('enter_notify_event', self.on_enter_event)
-		self.connect('leave_notify_event', self.on_leave_event)
 
 	def open_menu_shortcut(self, menu):
 		self.make_opaque()
@@ -289,14 +287,6 @@ class CommandWindow(Gtk.ApplicationWindow):
 
 	def make_transparent(self):
 		self.set_opacity(0)
-
-	def on_enter_event(self, widget, event):
-		pass
-		#self.make_opaque()
-
-	def on_leave_event(self, widget, event):
-		pass
-		#self.make_transparent()
 
 
 class GlobalMenu(Gtk.Application):
