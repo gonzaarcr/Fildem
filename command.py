@@ -3,6 +3,9 @@
 import os
 import threading
 
+from handlers.default import HudMenu
+from handlers.global_menu import GlobalMenu
+from handlers.rofi import RofiMenu
 
 def run_command(module, function):
 	args = 'python3 -c "from %s import %s as run; run()"'
