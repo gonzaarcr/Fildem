@@ -240,7 +240,10 @@ class DbusAppMenu(object):
 
 		if 'children-display' in item[1]:
 			item_id = item[0]
-			self.interface.AboutToShow(item_id)
+			try:			
+				self.interface.AboutToShow(item_id)
+			except Exception:
+				pass
 			self.interface.Event(item_id, 'opened', 'not used', dbus.UInt32(time.time()))
 			item = self.interface.GetLayout(item_id, -1, dbus.Array(signature="s"))[1]
 
