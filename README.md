@@ -41,6 +41,16 @@ And the configure the following files:
 gtk-modules="appmenu-gtk-module"
 ```
 
+### Arch
+
+I got it to run on a vm, since Arch is so customizable I can’t guaranted it will work on all system, but the modules installed were
+
+```
+pacman -S bamf appmenu-gtk-module libkeybinder3 libdbusmenu-gtk2 libdbusmenu-gtk3 libdbusmenu-qt5
+```
+
+You also have to install  `fuzzysearch` with pip and edit the files explained on the Ubuntu section.
+
 ## Customization
 
 ### Menu always visible
