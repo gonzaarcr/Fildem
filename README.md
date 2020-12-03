@@ -28,7 +28,7 @@ pip3 install fuzzysearch
 You can install the modules with
 
 ```
-sudo apt install appmenu-gtk-module-common appmenu-gtk2-module appmenu-gtk3-module unity-gtk-module-common
+sudo apt install appmenu-gtk2-module appmenu-gtk3-module unity-gtk-module-common
 ```
 
 And the configure the following files:
