@@ -12,26 +12,23 @@ You can also bring a HUD menu with Alt + Space.
 
 This is a prototype, as I don’t know if people will like or how much it will last until devs nuke it, so fell free to let me know your opinion.
 
-## Dependencies
-
-The dependencies are the same as gnome-hud. You can install it with:
-
-```
-sudo apt install libbamf3-dev bamfdaemon libkeybinder-3.0-dev
-pip3 install fuzzysearch
-```
-
-## Install modules for the menu
+## installation
 
 ### Ubuntu 20
 
 You can install the modules with
 
 ```
-sudo apt install appmenu-gtk2-module appmenu-gtk3-module unity-gtk-module-common
+sudo apt install libbamf3-dev bamfdaemon libkeybinder-3.0-dev appmenu-gtk2-module appmenu-gtk3-module unity-gtk-module-common
 ```
 
-And the configure the following files:
+And install the python dependency:
+
+```
+pip3 install fuzzysearch
+```
+
+And then configure the following files:
 
 - Create the file `~/.gtkrc-2.0` and append `gtk-modules="appmenu-gtk-module"`
 - The file `~/.config/gtk-3.0/settings.ini` should have the line `gtk-modules="appmenu-gtk-module"` under [Settings]. If it doesn’t exist create it and paste the following
@@ -49,7 +46,7 @@ I got it to run on a vm, since Arch is so customizable I can’t guaranted it wi
 pacman -S bamf appmenu-gtk-module libkeybinder3 libdbusmenu-gtk2 libdbusmenu-gtk3 libdbusmenu-qt5
 ```
 
-You also have to install  `fuzzysearch` with pip and edit the files explained on the Ubuntu section.
+You also have to install `fuzzysearch` with pip (`pip3 install fuzzysearch`) and edit the files explained on the Ubuntu section.
 
 ## Customization
 
