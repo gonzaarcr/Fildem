@@ -302,9 +302,6 @@ const MenuBar = class MenuBar {
 
 	// Hides the button and saves the text to this._storedLabel
 	_hideAppMenuButton() {
-		if (SHOW_APPMENU_BUTTON)
-			return;
-
 		let width = 0;
 		for (let el of Main.panel._leftBox.get_children()) {
 			let firstChild = el.get_first_child();
@@ -312,8 +309,10 @@ const MenuBar = class MenuBar {
 				this._appMenuButton = firstChild;
 				let label = firstChild._label;
 
-				this._storedLabel = label.get_text() != '' ? label.get_text() : null;
-				label.set_text('')
+				if (!SHOW_APPMENU_BUTTON) {
+					this._storedLabel = label.get_text() != '' ? label.get_text() : null;
+					label.set_text('');
+				}
 				this._width_offset = width + el.width;
 				break;
 			}
