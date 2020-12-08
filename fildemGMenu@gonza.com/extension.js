@@ -22,10 +22,10 @@ function log(msg) {
 // Distance between buttons
 const MIN_PADDING = 6;
 const NAT_PADDING = 10;
-// This is the appmenu button from default gnome
-const GNOME_APPMENU_WIDTH = 150;
 // Doesn't hide the menu
 const FORCE_SHOW_MENU = false;
+// if it shows it, the menu appears at the end of it
+const SHOW_APPMENU_BUTTON = false;
 
 
 const WindowActions = class WindowActions {
@@ -238,12 +238,6 @@ class MenuButton extends PanelMenu.Button {
 		this._menuBar.onButtonClicked(this._label);
 		return Clutter.EVENT_STOP;
 	}
-
-	/*
-	destroy()
-	{
-		super.destroy();
-	}*/
 });
 
 /**
@@ -257,6 +251,7 @@ const MenuBar = class MenuBar {
 		this._width_offset = 300;
 		this.MARGIN_FIRST_ELEMENT = 4;
 		this._isShowingMenu = false;
+		this._storedLabel = null;
 
 		this._notifyFocusWinId = global.display.connect('notify::focus-window', this._onWindowSwitched.bind(this));
 		this._proxy.listeners['SendTopLevelMenus'].push(this.setMenus.bind(this));
@@ -298,25 +293,37 @@ const MenuBar = class MenuBar {
 	}
 
 	_onPanelEnter() {
-		if (this._menuButtons.length === 0)
+		if (this._menuButtons.length === 0 && !Main.overview.visibleTarget)
 			return;
 
+		this._hideAppMenuButton();
 		this._showMenu();
 	}
 
-	_showMenu() {
+	// Hides the button and saves the text to this._storedLabel
+	_hideAppMenuButton() {
+		if (SHOW_APPMENU_BUTTON)
+			return;
+
 		let width = 0;
 		for (let el of Main.panel._leftBox.get_children()) {
 			let firstChild = el.get_first_child();
 			if (firstChild.constructor.name == 'AppMenuButton') {
-				firstChild.set_width(GNOME_APPMENU_WIDTH);
-				this._width_offset = width + GNOME_APPMENU_WIDTH;
+				this._appMenuButton = firstChild;
+				let label = firstChild._label;
+
+				this._storedLabel = label.get_text() != '' ? label.get_text() : null;
+				label.set_text('')
+				this._width_offset = width + el.width;
 				break;
 			}
 			if (el.is_visible()) {
 				width += el.get_width();
 			}
 		}
+	}
+
+	_showMenu() {
 		this._menuButtons.forEach(btn => btn.show());
 	}
 
@@ -325,15 +332,16 @@ const MenuBar = class MenuBar {
 			return;
 
 		this._hideMenu();
+		this._restoreLabel();
 	}
 
 	_hideMenu() {
 		this._menuButtons.forEach(btn => btn.hide());
-		for (let el of Main.panel._leftBox.get_children()) {
-			let firstChild = el.get_first_child();
-			if (firstChild.constructor.name == 'AppMenuButton') {
-				firstChild.set_width(-1);
-			}
+	}
+
+	_restoreLabel() {
+		if (this._menuButtons.length > 0 && this._appMenuButton && this._storedLabel != null) {
+			this._appMenuButton._label.set_text(this._storedLabel);
 		}
 	}
 
@@ -360,6 +368,7 @@ const MenuBar = class MenuBar {
 	}
 
 	_onWindowSwitched() {
+		this._storedLabel = null;
 		const overview = Main.overview.visibleTarget;
 		const focusApp = WinTracker.focus_app || Main.panel.statusArea.appMenu._targetApp;
 		if (focusApp) {
@@ -389,8 +398,10 @@ const MenuBar = class MenuBar {
 	}
 
 	_onOverviewClosed() {
-		if (FORCE_SHOW_MENU)
+		if (FORCE_SHOW_MENU) {
+			this._hideAppMenuButton();
 			this._showMenu();
+		}
 	}
 
 	_disconnectAll() {
