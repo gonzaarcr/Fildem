@@ -54,6 +54,10 @@ You also have to install `fuzzysearch` with pip (`pip3 install fuzzysearch`) and
 
 If you don’t want to have to hover the menu to view it, change `FORCE_SHOW_MENU` in `extension.js` to `true`, and reload the shell (Alt+F2, r).
 
+### AppMenu Button always visible
+
+The AppMenu button is the gnome button that appears on the top panel. You can set `SHOW_APPMENU_BUTTON` to `true` if you want that. If you are using Unite extension, you can set the button to show the app name instead of the title, otherwise it will be to long and the menu will appear at the right side of the panel.
+
 ### Remove space in between buttons
 
 In some gnome themes, the buttons have a small spacing beetween them. This can make the buttons easy to miss and unfocusing our window if it’s not maximized. To fix this, add this somewhere on your `gnome-shell.css` theme:
