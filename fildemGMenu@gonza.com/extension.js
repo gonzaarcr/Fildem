@@ -535,11 +535,11 @@ class MyProxy {
 		global.log(`${name} ${oldOwner} ${newOwner}`)
 	}
 
-	WindowSwitched(windowData) {
+	async WindowSwitched(windowData) {
 		this._proxy.WindowSwitchedRemote(windowData);
 	}
 
-	EchoSignal(menu, x) {
+	async EchoSignal(menu, x) {
 		this._proxy.EchoSignalRemote(menu, x);
 	}
 
