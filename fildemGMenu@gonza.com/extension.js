@@ -293,7 +293,7 @@ const MenuBar = class MenuBar {
 	}
 
 	_onPanelEnter() {
-		if (this._menuButtons.length === 0 && !Main.overview.visibleTarget)
+		if (this._menuButtons.length === 0 || Main.overview.visibleTarget)
 			return;
 
 		this._hideAppMenuButton();
