@@ -8,6 +8,8 @@ from gi.repository import Gio
 
 import os
 
+from utils.service import MyService
+
 '''
 Everything in this file is due to Wayland compatibility due to Bamf.
 This is the only file that should have import bamf.
@@ -49,6 +51,32 @@ class Window(object):
 			return self.props['appName']
 		
 		return ''
+
+
+class WindowActions(object):
+	"""Window actions from the shell from the alt-space menu"""
+	def __init__(self, callback=None):
+		super(WindowActions, self).__init__()
+
+		self.listeners = []
+		if callback is not None:
+			self.listeners.append(callback)
+
+		session = dbus.SessionBus()
+		self.proxy = session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
+		self.actions = []
+		signal = self.proxy.connect_to_signal("ListWindowActionsSignal", self.on_actions_receive)
+
+	def request_window_actions(self):
+		self.proxy.RequestWindowActions()
+
+	def on_actions_receive(self, actions):
+		self.actions = actions
+		for callback in self.listeners:
+			callback(actions)
+
+	def activate_action(self, action):
+		self.proxy.ActivateWindowAction(action)
 
 
 class WindowManager(object):

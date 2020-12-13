@@ -13,7 +13,7 @@ from gi.repository import GObject
 from utils.fuzzy import FuzzyMatch
 from utils.fuzzy import normalize_string
 from utils.fuzzy import match_replace
-from utils.menu import WindowActions
+from utils.window import WindowActions
 
 
 def normalize_markup(text):
