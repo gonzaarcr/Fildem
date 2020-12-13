@@ -300,7 +300,7 @@ class DbusMenu:
 		self._start_app(menu)
 
 	def on_hud_activated(self):
-		menu = HudMenu(dbus_menu)
+		menu = HudMenu(self)
 		menu.run()
 
 	def on_keybind_activated(self, character: str):

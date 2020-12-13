@@ -13,7 +13,7 @@ from gi.repository import GObject
 from utils.fuzzy import FuzzyMatch
 from utils.fuzzy import normalize_string
 from utils.fuzzy import match_replace
-from utils.window import WindowActions
+from utils.window import WindowActions, backend
 
 
 def normalize_markup(text):
@@ -233,7 +233,8 @@ class CommandList(Gtk.ListBox):
 class CommandWindow(Gtk.ApplicationWindow):
 
 	def __init__(self, *args, **kwargs):
-		kwargs['type'] = Gtk.WindowType.POPUP
+		if backend == 'x11':
+			kwargs['type'] = Gtk.WindowType.POPUP
 		super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
 
 		self.set_size_request(750, -1)
