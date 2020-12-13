@@ -113,3 +113,12 @@ class MyService(dbus.service.Object):
 	@dbus.service.signal(BUS_NAME, signature='s')
 	def ActivateWindowActionSignal(self, action):
 		pass
+
+	# Needed to activate the hud on wayland
+	@dbus.service.method(BUS_NAME)
+	def EmitHudActivated(self):
+		self.HudActivated()
+
+	@dbus.service.signal(BUS_NAME)
+	def HudActivated(self):
+		pass

@@ -9,6 +9,8 @@ from gi.repository import Keybinder
 from utils.fuzzy import match_replace
 from utils.window import WindowManager
 from utils.service import MyService
+
+from handlers.default import HudMenu
 from handlers.global_menu import GlobalMenu
 
 
@@ -267,6 +269,7 @@ class DbusMenu:
 		self.window = WindowManager.new_window()
 		self._init_window()
 		self._listen_menu_activated()
+		self._listen_hud_activated()
 		self._width_offset = 300
 		WindowManager.add_listener(self.on_window_switched)
 
@@ -283,6 +286,10 @@ class DbusMenu:
 		proxy  = self.session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
 		signal = proxy.connect_to_signal("MenuActivated", self.on_menu_activated)
 
+	def _listen_hud_activated(self):
+		proxy  = self.session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
+		signal = proxy.connect_to_signal("HudActivated", self.on_hud_activated)
+
 	def on_menu_activated(self, menu: str, x: int):
 		if menu == '__fildem_move':
 			self._move_menu(x)
@@ -291,6 +298,10 @@ class DbusMenu:
 		if x != -1:
 			self._width_offset = x
 		self._start_app(menu)
+
+	def on_hud_activated(self):
+		menu = HudMenu(dbus_menu)
+		menu.run()
 
 	def on_keybind_activated(self, character: str):
 		self.on_app_started()
