@@ -68,3 +68,8 @@ In some gnome themes, the buttons have a small spacing beetween them. This can m
 #panel #panelLeft .panel-button {
   spacing: 0px; }
 ```
+
+## Running the program at startup
+
+If you manage to make the program work and want to have it running automatically at startup you can add an entry to `gnome-session-properties` with the name of the program and the path to execute it.
+ 
