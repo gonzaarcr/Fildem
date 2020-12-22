@@ -39,7 +39,7 @@ class AppMenuService(dbus.service.Object):
 		if windowId in self.window_dict:
 			return self.window_dict[windowId]
 
-	@dbus.service.method(BUS_NAME)
+	@dbus.service.method(BUS_NAME, out_signature='a{u(so)}')
 	def GetMenus(self):
 		return self.window_dict
 
