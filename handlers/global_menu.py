@@ -365,7 +365,8 @@ class GlobalMenu(Gtk.Application):
 		self.on_hide_window()
 
 	def move_window(self, x: int):
-		x /= Gdk.Display.get_default().get_monitor(0).get_scale_factor()
+		primary_mon = Gdk.Display.get_default().get_primary_monitor()
+		x = primary_mon.get_geometry().x + x / primary_mon.get_scale_factor()
 		self.window.set_custom_position(x)
 
 	def on_menu_activated(self, menu: str, x: int):
