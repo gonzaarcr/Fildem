@@ -310,7 +310,9 @@ const MenuBar = class MenuBar {
 				let label = firstChild._label;
 
 				if (!SHOW_APPMENU_BUTTON) {
-					this._storedLabel = label.get_text() != '' ? label.get_text() : null;
+					if (label.get_text() != '') {
+						this._storedLabel = label.get_text();
+					}
 					label.set_text('');
 				}
 				this._width_offset = width + el.width;
