@@ -72,4 +72,7 @@ In some gnome themes, the buttons have a small spacing beetween them. This can m
 ## Running the program at startup
 
 If you manage to make the program work and want to have it running automatically at startup you can add an entry to `gnome-session-properties` with the name of the program and the path to execute it.
- 
+
+## State of the Apps
+
+To see a list of apps that work check [the wiki](https://github.com/gonzaarcr/Fildem/wiki/Using#state-of-the-apps)
