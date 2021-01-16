@@ -249,7 +249,7 @@ class DbusAppMenu(object):
 			self.interface.Event(item_id, 'opened', 'not used', dbus.UInt32(time.time()))
 			item = self.interface.GetLayout(item_id, -1, dbus.Array(signature="s"))[1]
 
-		if bool(menu_item.label) and menu_item.label != 'Root':
+		if bool(menu_item.label) and menu_item.label != 'Root' and menu_item.label != 'DBusMenuRoot':
 			menu_path = labels + [menu_item.label]
 
 		if len(item[2]):
