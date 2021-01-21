@@ -4,6 +4,7 @@ import time
 
 gi.require_version('Keybinder', '3.0')
 
+from gi.repository import GLib
 from gi.repository import Keybinder
 
 from utils.fuzzy import match_replace
@@ -341,13 +342,13 @@ class DbusMenu:
 
 	def _update_menus(self):
 		self.gtkmenu.get_results()
-		if not len(self.appmenu.items):
+		if not len(self.gtkmenu.items):
 			self.appmenu.get_results()
 
 	def _update(self):
 		self._update_menus()
-		top_level_menus = list(dict.fromkeys(map(lambda it: it.path[0] if len(it.path) > 0 else None, self.items)))
-		top_level_menus = list(filter(lambda x: x is not None, top_level_menus))
+		top_level_menus = map(lambda it: it.path[0] if len(it.path) else None, self.items)
+		top_level_menus = list(filter(None, dict.fromkeys(top_level_menus)))
 		self._handle_shortcuts(top_level_menus)
 		self._send_msg(top_level_menus)
 
