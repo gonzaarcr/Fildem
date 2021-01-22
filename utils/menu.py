@@ -268,6 +268,8 @@ class DbusMenu:
 		self.app = None
 		self.session = dbus.SessionBus()
 		self.window = WindowManager.new_window()
+		self.tries = 0
+		self.retry_timer_id = 0
 		self._init_window()
 		self._listen_menu_activated()
 		self._listen_hud_activated()
@@ -280,8 +282,15 @@ class DbusMenu:
 		self._update()
 
 	def on_window_switched(self, window):
+		self.reset_timeout()
 		self.window = window
 		self._init_window()
+
+	def reset_timeout(self):
+		if self.retry_timer_id:
+			GLib.source_remove(self.retry_timer_id)
+		self.tries = 0
+		self.retry_timer_id = 0
 
 	def _listen_menu_activated(self):
 		proxy  = self.session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
@@ -340,10 +349,19 @@ class DbusMenu:
 			c = label[idx + 1]
 			self.keyb.add_keybinding(c)
 
+	def _retry_init(self):
+		self.retry_timer_id = 0
+		self._init_window()
+
 	def _update_menus(self):
 		self.gtkmenu.get_results()
 		if not len(self.gtkmenu.items):
 			self.appmenu.get_results()
+
+		N = 2 # Amount of tries
+		if self.tries < N and not len(self.items):
+			self.tries += 1
+			self.retry_timer_id = GLib.timeout_add_seconds(2, self._retry_init)
 
 	def _update(self):
 		self._update_menus()
