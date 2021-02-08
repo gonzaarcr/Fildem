@@ -98,9 +98,9 @@ class DbusGtkMenu(object):
 			for menu in results:
 				self.results[(menu[0], menu[1])] = menu[2]
 
-		self.collect_entries([0, 0])
+		# self.collect_entries()
 
-	def collect_entries(self, menu, labels=[]):
+	def collect_entries(self, menu=(0, 0), labels=[]):
 		section = (menu[0], menu[1])
 		for menu in self.results.get(section, []):
 			if 'label' in menu:
@@ -156,6 +156,13 @@ class DbusGtkMenu(object):
 		checked = description[2]
 		return enabled, checked
 
+	def get_top_level_menus(self):
+		if not len(self.results):
+			return []
+		menus = self.results[(0, 2)]
+		menus = list(map(lambda x: x.get('label', ''), menus))
+		return menus
+
 
 class DbusAppMenuItem(object):
 
@@ -173,6 +180,7 @@ class DbusAppMenuItem(object):
 		self.icon_data = item[1].get('icon_data', bytearray())
 		# Only used on Gtkapps
 		self.section = None
+		self.children = []
 
 	def get_shorcut(self, item):
 		shortcut = item.get('shortcut', '')
@@ -195,6 +203,8 @@ class DbusAppMenu(object):
 		self.session   = session
 		self.window    = window
 		self.interface = self.get_interface()
+		self.top_level_menus = []
+		self.results = None
 
 	def activate(self, selection):
 		action = self.actions[selection]
@@ -231,19 +241,40 @@ class DbusAppMenu(object):
 
 	def get_results(self):
 		if self.interface:
-			results = self.interface.GetLayout(0, -1, dbus.Array(signature="s"))
+			self.results = self.interface.GetLayout(0, -1, dbus.Array(signature="s"))
 			try:
-				self.collect_entries(results[1], [])
+				self.top_level_menus = self.collect_top_level_menus(self.results[1])
 			except Exception:
 				pass
 
-	def collect_entries(self, item=None, labels=[]):
+	def collect_top_level_menus(self, item):
+		"""
+		A reduced version of collect_entries to make it more responsive.
+		Only collect the first level of menus to show immediately.
+		"""
+		top_level_menus = []
+		item_id = item[0]
+		self.interface.AboutToShow(item_id)
+		self.interface.Event(item_id, 'opened', 'not used', dbus.UInt32(time.time()))
+		item = self.interface.GetLayout(item_id, -1, dbus.Array(signature="s"))[1]
+		if len(item[2]):
+			for c in item[2]:
+				top_level_menus.append(c[1].get('label', ''))
+		return top_level_menus
+
+	def collect_entries(self, item=None, labels=None):
+		if self.results is None:
+			return
+		if item is None:
+			item = self.results[1]
+		if labels is None:
+			labels = []
 		menu_item = DbusAppMenuItem(item, labels)
 		menu_path = labels
 
 		if 'children-display' in item[1]:
 			item_id = item[0]
-			try:			
+			try:
 				self.interface.AboutToShow(item_id)
 			except Exception:
 				pass
@@ -261,6 +292,11 @@ class DbusAppMenu(object):
 			self.actions[menu_item.text] = menu_item.action
 			self.items.append(menu_item)
 
+
+	def get_top_level_menus(self):
+		return self.top_level_menus
+
+
 class DbusMenu:
 
 	def __init__(self):
@@ -270,6 +306,7 @@ class DbusMenu:
 		self.window = WindowManager.new_window()
 		self.tries = 0
 		self.retry_timer_id = 0
+		self.collect_timer = 0
 		self._init_window()
 		self._listen_menu_activated()
 		self._listen_hud_activated()
@@ -291,6 +328,9 @@ class DbusMenu:
 			GLib.source_remove(self.retry_timer_id)
 		self.tries = 0
 		self.retry_timer_id = 0
+
+		if self.collect_timer:
+			GLib.source_remove(self.collect_timer)
 
 	def _listen_menu_activated(self):
 		proxy  = self.session.get_object(MyService.BUS_NAME, MyService.BUS_PATH)
@@ -353,22 +393,33 @@ class DbusMenu:
 		self.retry_timer_id = 0
 		self._init_window()
 
-	def _update_menus(self):
-		self.gtkmenu.get_results()
-		if not len(self.gtkmenu.items):
-			self.appmenu.get_results()
-
+	def _add_retry(self):
 		N = 2 # Amount of tries
 		if self.tries < N and not len(self.items):
 			self.tries += 1
 			self.retry_timer_id = GLib.timeout_add_seconds(2, self._retry_init)
 
+	def collect_entries(self):
+		def collect():
+			self.collect_timer = 0
+			self.gtkmenu.collect_entries()
+			self.appmenu.collect_entries()
+
+		self.collect_timer = GLib.timeout_add(200, collect)
+
 	def _update(self):
-		self._update_menus()
-		top_level_menus = map(lambda it: it.path[0] if len(it.path) else None, self.items)
-		top_level_menus = list(filter(None, dict.fromkeys(top_level_menus)))
-		self._handle_shortcuts(top_level_menus)
+		self.gtkmenu.get_results()
+		top_level_menus = self.gtkmenu.get_top_level_menus()
+		if not len(top_level_menus):
+			self.appmenu.get_results()
+			top_level_menus = self.appmenu.get_top_level_menus()
+
+		if not len(top_level_menus):
+			self._add_retry()
+		else:
+			self.collect_entries()
 		self._send_msg(top_level_menus)
+		self._handle_shortcuts(top_level_menus)
 
 	def _send_msg(self, top_level_menus):
 		if len(top_level_menus) == 0:
