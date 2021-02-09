@@ -3,6 +3,10 @@
 const { loadInterfaceXML } = imports.misc.fileUtils;
 
 const { Clutter, Gio, GLib, GObject, Meta, St } = imports.gi;
+const Lang = imports.lang;
+const Signals = imports.signals;
+
+
 
 const AppSystem  = imports.gi.Shell.AppSystem.get_default();
 const WinTracker = imports.gi.Shell.WindowTracker.get_default();
@@ -23,7 +27,7 @@ function log(msg) {
 const MIN_PADDING = 6;
 const NAT_PADDING = 10;
 // Doesn't hide the menu
-const FORCE_SHOW_MENU = false;
+const FORCE_SHOW_MENU = true;
 // if it shows it, the menu appears at the end of it
 const SHOW_APPMENU_BUTTON = false;
 
@@ -205,14 +209,19 @@ const WindowActions = class WindowActions {
 /**
  * A single Button like File, Edit, etc.
  */
-var MenuButton = GObject.registerClass(
-class MenuButton extends PanelMenu.Button {
+var MenuButton = new Lang.Class({
+
+    Name: 'MenuButton',
+    Extends: PanelMenu.Button,
 
 	_init(label, menuBar) {
+        this.parent(0.0, null, true);
 		label = label.replace('_', '');
-		super._init(0.0, label);
+
 		this._label = label;
 		this._menuBar = menuBar;
+
+        let bin = new St.Bin({ name: 'myMenuButton' });
 
 		this.box = new St.BoxLayout({style_class: 'panel-status-menu-box menubar-button'});
 		this.labelWidget = new St.Label({
@@ -220,16 +229,18 @@ class MenuButton extends PanelMenu.Button {
 			y_align: Clutter.ActorAlign.CENTER,
 			reactive: true
 		});
+		this.actor.add_actor(bin)
 		this.box.add_child(this.labelWidget);
-		this.add_child(this.box);
-		this.connect('button-release-event', this.onButtonEvent.bind(this));
-	}
+		bin.set_child(this.box)
+		//this.actor.add_child(this.box);
+		this.actor.connect('button-release-event', this.onButtonEvent.bind(this));
+	},
 
 	_onStyleChanged(actor) {
-		super._onStyleChanged(actor);
+		// super._onStyleChanged(actor);
 		this._minHPadding = MIN_PADDING;
 		this._natHPadding = NAT_PADDING;
-	}
+	},
 
 	onButtonEvent(actor, event) {
 		if (event.get_button() !== 1)
@@ -239,6 +250,8 @@ class MenuButton extends PanelMenu.Button {
 		return Clutter.EVENT_STOP;
 	}
 });
+Signals.addSignalMethods(MenuButton.prototype);
+
 
 /**
  * This is a manager not a container
@@ -258,8 +271,8 @@ const MenuBar = class MenuBar {
 		this._proxy.listeners['MenuOnOff'].push(this._onMenuOnOff.bind(this));
 		Main.panel.reactive = true;
 		Main.panel.track_hover = true;
-		Main.panel.connect('enter-event', this._onPanelEnter.bind(this));
-		Main.panel.connect('leave-event', this._onPanelLeave.bind(this));
+		Main.panel.actor.connect('enter-event', this._onPanelEnter.bind(this));
+		Main.panel.actor.connect('leave-event', this._onPanelLeave.bind(this));
 		
 		Main.overview.connect('showing', this._onOverviewOpened.bind(this))
 		Main.overview.connect('hiding', this._onOverviewClosed.bind(this))
@@ -269,9 +282,11 @@ const MenuBar = class MenuBar {
 		let menuButton = new MenuButton(label, this);
 		this._menuButtons.push(menuButton);
 		const nItems = Main.panel._leftBox.get_children().length;
-		menuButton.hide();
+		//menuButton.hide();
+		/*
 		if (setmargin)
 			menuButton.set_style('margin-left: '+ this.MARGIN_FIRST_ELEMENT + 'px')
+		*/
 		Main.panel.addToStatusArea(label, menuButton, nItems, 'left');
 	}
 
@@ -303,29 +318,21 @@ const MenuBar = class MenuBar {
 	// Hides the button and saves the text to this._storedLabel
 	_hideAppMenuButton() {
 		let width = 0;
+		let founded = false;
+		let n = Main.panel._leftBox.get_children().length;
 		for (let el of Main.panel._leftBox.get_children()) {
-			let firstChild = el.get_first_child();
-			if (firstChild.constructor.name == 'AppMenuButton') {
-				this._appMenuButton = firstChild;
-				let label = firstChild._label;
-
-				if (!SHOW_APPMENU_BUTTON) {
-					if (label.get_text() != '') {
-						this._storedLabel = label.get_text();
-					}
-					label.set_text('');
-				}
-				this._width_offset = width + el.width;
-				break;
-			}
 			if (el.is_visible()) {
 				width += el.get_width();
 			}
+			if (el == Main.panel.statusArea.appMenu.container) {
+				break
+			}
 		}
+		this._width_offset = width
 	}
 
 	_showMenu() {
-		this._menuButtons.forEach(btn => btn.show());
+		this._menuButtons.forEach(btn => btn.box.show());
 	}
 
 	_onPanelLeave() {
@@ -337,7 +344,7 @@ const MenuBar = class MenuBar {
 	}
 
 	_hideMenu() {
-		this._menuButtons.forEach(btn => btn.hide());
+		this._menuButtons.forEach(btn => btn.box.hide());
 	}
 
 	_restoreLabel() {
