@@ -73,6 +73,10 @@ In some gnome themes, the buttons have a small spacing beetween them. This can m
 
 If you manage to make the program work and want to have it running automatically at startup you can add an entry to `gnome-session-properties` with the name of the program and the path to execute it.
 
+## Create a shortcut for the HUD on Wayland
+
+Since it’s not possible to creat a shortcut from the app on Wayland, you have to create it yourself. Go to Settings → Keyboard Shorcuts and create a shortcut that executes `inithud.sh`.
+
 ## State of the Apps
 
 To see a list of apps that work check [the wiki](https://github.com/gonzaarcr/Fildem/wiki/Using#state-of-the-apps)
