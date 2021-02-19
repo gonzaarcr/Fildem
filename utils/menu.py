@@ -157,7 +157,7 @@ class DbusGtkMenu(object):
 		return enabled, checked
 
 	def get_top_level_menus(self):
-		if not len(self.results):
+		if not len(self.results) or not (0, 2) in self.results:
 			return []
 		menus = self.results[(0, 2)]
 		menus = list(map(lambda x: x.get('label', ''), menus))
