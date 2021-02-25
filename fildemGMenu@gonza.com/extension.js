@@ -251,7 +251,6 @@ const MenuBar = class MenuBar {
 		this._width_offset = 300;
 		this.MARGIN_FIRST_ELEMENT = 4;
 		this._isShowingMenu = false;
-		this._storedLabel = null;
 
 		this._notifyFocusWinId = global.display.connect('notify::focus-window', this._onWindowSwitched.bind(this));
 		this._proxy.listeners['SendTopLevelMenus'].push(this.setMenus.bind(this));
@@ -302,7 +301,7 @@ const MenuBar = class MenuBar {
 		this._showMenu();
 	}
 
-	// Hides the button and saves the text to this._storedLabel
+	// Hides the label and calculates the width
 	_hideAppMenuButton() {
 		let width = 0;
 		for (let el of Main.panel._leftBox.get_children()) {
@@ -312,10 +311,7 @@ const MenuBar = class MenuBar {
 				let label = firstChild._label;
 
 				if (!SHOW_APPMENU_BUTTON) {
-					if (label.get_text() != '') {
-						this._storedLabel = label.get_text();
-					}
-					label.set_text('');
+					label.hide();
 				}
 				this._width_offset = width + el.width;
 				break;
@@ -343,8 +339,8 @@ const MenuBar = class MenuBar {
 	}
 
 	_restoreLabel() {
-		if (this._menuButtons.length > 0 && this._appMenuButton && this._storedLabel != null) {
-			this._appMenuButton._label.set_text(this._storedLabel);
+		if (this._menuButtons.length > 0 && this._appMenuButton) {
+			this._appMenuButton._label.show();
 		}
 	}
 
@@ -371,7 +367,6 @@ const MenuBar = class MenuBar {
 	}
 
 	_onWindowSwitched() {
-		this._storedLabel = null;
 		this.removeAll();
 		const overview = Main.overview.visibleTarget;
 		const focusApp = WinTracker.focus_app || Main.panel.statusArea.appMenu._targetApp;
