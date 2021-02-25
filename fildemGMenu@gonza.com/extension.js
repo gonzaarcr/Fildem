@@ -258,8 +258,10 @@ const MenuBar = class MenuBar {
 		this._proxy.listeners['MenuOnOff'].push(this._onMenuOnOff.bind(this));
 		Main.panel.reactive = true;
 		Main.panel.track_hover = true;
-		Main.panel.connect('enter-event', this._onPanelEnter.bind(this));
-		Main.panel.connect('leave-event', this._onPanelLeave.bind(this));
+		if (!FORCE_SHOW_MENU) {
+			Main.panel.connect('enter-event', this._onPanelEnter.bind(this));
+			Main.panel.connect('leave-event', this._onPanelLeave.bind(this));
+		}
 		
 		Main.overview.connect('showing', this._onOverviewOpened.bind(this))
 		Main.overview.connect('hiding', this._onOverviewClosed.bind(this))
