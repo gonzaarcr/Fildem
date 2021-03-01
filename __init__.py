@@ -1,1 +1,1 @@
-name = 'gnomehud'
+name = 'fildem'
