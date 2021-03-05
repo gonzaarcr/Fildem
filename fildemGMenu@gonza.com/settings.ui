@@ -27,7 +27,7 @@
 						<property name="visible">True</property>
 						<property name="can_focus">False</property>
 						<property name="valign">center</property>
-						<property name="label">First tab changes windows (or apps)</property>
+						<property name="label">Button paddings (tweak this if the menu and items desynchronize)</property>
 					</object>
 					<packing>
 						<property name="expand">False</property>
@@ -118,7 +118,7 @@
 						<property name="visible">True</property>
 						<property name="can_focus">False</property>
 						<property name="valign">center</property>
-						<property name="label">Hide App Menu label</property>
+						<property name="label">Hide the app label when showing the menu</property>
 					</object>
 					<packing>
 						<property name="expand">False</property>
