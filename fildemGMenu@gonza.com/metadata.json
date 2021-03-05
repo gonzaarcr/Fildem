@@ -1,6 +1,7 @@
 {
   "name": "Fildem global menu",
   "description": "Global menu for Ubuntu 20",
+  "settings-schema": "org.gnome.shell.extensions.fildem-global-menu",
   "shell-version": [
     "3.36",
     "3.38"
