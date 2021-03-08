@@ -621,9 +621,6 @@ let extension;
 function init(metadata) {
 }
 
-function init() {
-}
-
 function enable() {
 	let settings = new Settings(Me.metadata['settings-schema']);
 	extension = new Extension(settings);
