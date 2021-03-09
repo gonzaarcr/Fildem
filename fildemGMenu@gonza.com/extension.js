@@ -349,6 +349,11 @@ const MenuBar = class MenuBar {
 
 	_showMenu() {
 		this._menuButtons.forEach(btn => btn.show());
+		this._menuButtons.forEach(btn => btn.ease({
+			opacity: 255,
+			mode: Clutter.AnimationMode.EASE_OUT_QUART,
+			duration: 250
+		}));
 	}
 
 	_onPanelLeave() {
@@ -356,11 +361,15 @@ const MenuBar = class MenuBar {
 			return;
 
 		this._hideMenu();
-		this._restoreLabel();
 	}
 
 	_hideMenu() {
-		this._menuButtons.forEach(btn => btn.hide());
+		this._menuButtons.forEach(btn => btn.ease({
+			opacity: 0,
+			mode: Clutter.AnimationMode.EASE_OUT_QUART,
+			duration: 100,
+			onComplete: () => { this._menuButtons.forEach(btn => btn.hide()); this._restoreLabel() }
+		}));
 	}
 
 	_restoreLabel() {
