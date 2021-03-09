@@ -183,8 +183,8 @@ class DbusAppMenu(object):
 		"""
 		top_level_menus = []
 		item_id = item[0]
-		self.interface.AboutToShow(item_id)
-		self.interface.Event(item_id, 'opened', 'not used', dbus.UInt32(time.time()))
+		# self.interface.AboutToShow(item_id)
+		# self.interface.Event(item_id, 'opened', 'not used', dbus.UInt32(time.time()))
 		item = self.interface.GetLayout(item_id, -1, dbus.Array(signature="s"))[1]
 		if len(item[2]):
 			for c in item[2]:
