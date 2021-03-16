@@ -1,23 +1,24 @@
-import gi
 import dbus
-
-gi.require_version('Bamf', '3')
-
-from gi.repository import Bamf
-from gi.repository import Gio
-
+import gi
 import os
+
+from gi.repository import Gio
 
 from utils.service import MyService
 
 '''
 Everything in this file is due to Wayland compatibility due to Bamf.
 This is the only file that should have import bamf.
-It’s replacement is a gnome extension
+Its replacement is the gnome extension
 '''
 # if there’s a problem, maybe try this
 # loginctl show-session $(loginctl | grep $(whoami) | awk '{print $1}') -p Type
 backend = os.environ['XDG_SESSION_TYPE']
+
+if backend == 'x11':
+	gi.require_version('Bamf', '3')
+	from gi.repository import Bamf
+
 
 class Window(object):
 	def __init__(self, bamf_window=None):
