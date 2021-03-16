@@ -2,12 +2,10 @@ import gi
 import dbus
 import time
 
-gi.require_version('Keybinder', '3.0')
-
 from gi.repository import GLib
-from gi.repository import Keybinder
 
 from utils.fuzzy import match_replace
+from utils.global_keybinder import GlobalKeybinder
 from utils.window import WindowManager
 from utils.service import MyService
 
@@ -20,7 +18,7 @@ from menu_model.menu_model import DbusGtkMenu, DbusAppMenu
 class DbusMenu:
 
 	def __init__(self):
-		self.keyb = GlobalKeybinder(self.on_keybind_activated)
+		self.keyb = GlobalKeybinder.create(self.on_keybind_activated)
 		self.app = None
 		self.session = dbus.SessionBus()
 		self.window = WindowManager.new_window()
@@ -190,27 +188,3 @@ class DbusMenu:
 			except Exception as e:
 				pass
 			print('Gnome HUD: WARNING: (%s) %s' % (promt, alert))
-
-
-class GlobalKeybinder(object):
-	"""
-	Global keybinder for mnemonic, like Alt+F for files, etc.
-	"""
-	def __init__(self, callback=None):
-		super(GlobalKeybinder, self).__init__()
-		Keybinder.init()
-		self.keybinding_strings = []
-		self.keybinder_callback = callback
-
-	def add_keybinding(self, character):
-		acc = '<Alt>' + character
-		Keybinder.bind(acc, lambda accelerator: self.on_keybind_activated(character))
-		self.keybinding_strings.append(acc)
-
-	def on_keybind_activated(self, char):
-		self.keybinder_callback(char)
-
-	def remove_all_keybindings(self):
-		for k in self.keybinding_strings:
-			Keybinder.unbind(k)
-		self.keybinding_strings = []
