@@ -384,8 +384,6 @@ class HudMenu(Gtk.Application):
 		super(Gtk.Application, self).__init__(*args, **kwargs)
 
 		self.dbus_menu = dbus_menu
-		self.window_actions = WindowActions(self.on_window_actions_receive)
-		self.window_actions.request_window_actions()
 
 		# self.set_accels_for_action('app.start', ['<Ctrl><Alt>space'])
 		self.set_accels_for_action('app.quit', ['Escape'])
@@ -410,6 +408,9 @@ class HudMenu(Gtk.Application):
 	def do_activate(self):
 		self.window = CommandWindow(application=self, title='Gnome HUD')
 		self.window.show_all()
+
+		self.window_actions = WindowActions(self.on_window_actions_receive)
+		self.window_actions.request_window_actions()
 
 		self.window.set_menu_actions(self.dbus_menu.actions)
 		self.window.connect('focus-out-event', self.on_hide_window)
