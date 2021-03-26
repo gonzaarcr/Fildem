@@ -52,19 +52,19 @@ You also have to install `fuzzysearch` with pip (`pip3 install fuzzysearch`) and
 
 ### Menu always visible
 
-If you don’t want to have to hover the menu to view it, change `FORCE_SHOW_MENU` in `extension.js` to `true`, and reload the shell (Alt+F2, r).
+By default, the menu is visible when you hover the mouse on the panel. If you want the menu to be always visible, unselect “Show menu only when the mouse is over the panel” in the preferences of the extension.
 
 ### AppMenu Button always visible
 
-The AppMenu button is the gnome button that appears on the top panel. You can set `SHOW_APPMENU_BUTTON` to `true` if you want that. If you are using Unite extension, you can set the button to show the app name instead of the title, otherwise it will be to long and the menu will appear at the right side of the panel.
+The AppMenu button shows the application name or window title (if you have some extension) in the panel. By default, the fildem extension hides that label when the menu is being shown. If you want it to be always visible, you can unselect “Hide App Menu label” in the preferences of the extension.
 
 ### Reduce space between buttons
 
-Modify the variables `MIN_PADDING` and `NAT_PADDING` in the (extension.js)[https://github.com/gonzaarcr/Fildem/blob/master/fildemGMenu%40gonza.com/extension.js] file.
+If the menu shown on the panel is shifted with relation to the one that appears, you can tweak the padding in the preferences window of the extension.
 
 ### Remove space in between buttons
 
-In some gnome themes, the buttons have a small spacing beetween them. This can make the buttons easy to miss and unfocusing our window if it’s not maximized. To fix this, add this somewhere on your `gnome-shell.css` theme:
+In some gnome themes, the buttons have a small spacing between them. This can make the buttons easy to miss and unfocusing our window if it’s not maximized. To fix this, add this somewhere on your `gnome-shell.css` theme:
 
 ```
 #panel #panelLeft {
