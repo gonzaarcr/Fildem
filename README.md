@@ -88,3 +88,7 @@ To see a list of apps that work check [the wiki](https://github.com/gonzaarcr/Fi
 ## Installation troubleshooting
 
 If you have any question on to get it to work, please don’t create an issue, use [this discussion](https://github.com/gonzaarcr/Fildem/discussions/33).
+
+## Build this branch
+
+I still need to upload some files for the project to be built, but the command is `python3 setup.py sdist bdist_wheel`.

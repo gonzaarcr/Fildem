@@ -7,11 +7,9 @@ gi.require_version('Keybinder', '3.0')
 from gi.repository import Keybinder, GLib
 
 from dbus.mainloop.glib import DBusGMainLoop
-from command import default_hud_menu
-from command import rofi_hud_menu
-from command import global_hud_menu
 
-from utils.menu import DbusMenu
+from fildem.command import default_hud_menu, rofi_hud_menu, global_hud_menu
+from fildem.utils.menu import DbusMenu
 
 
 def run_keybinder(callback):

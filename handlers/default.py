@@ -10,10 +10,10 @@ from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
 
-from utils.fuzzy import FuzzyMatch
-from utils.fuzzy import normalize_string
-from utils.fuzzy import match_replace
-from utils.window import WindowActions, backend
+from fildem.utils.fuzzy import FuzzyMatch
+from fildem.utils.fuzzy import normalize_string
+from fildem.utils.fuzzy import match_replace
+from fildem.utils.window import WindowActions, backend
 
 
 def normalize_markup(text):
