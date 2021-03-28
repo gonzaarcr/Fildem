@@ -1,6 +1,6 @@
 # Fildem
 
-## Global menu for Ubuntu 20
+## Global menu for Gnome
 
 [![Buy Me A Coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg)](https://buymeacoffee.com/gonza)
 
