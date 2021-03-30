@@ -15,7 +15,7 @@ class PrefsWidget extends Gtk.Box {
 		this._buildable.add_from_file(Me.path + '/settings.ui');
 
 		let prefsWidget = this._getWidget('prefs_widget');
-		this.add(prefsWidget);
+		this.append(prefsWidget);
 
 		this._settings = settings;
 		this._bindBooleans();
@@ -77,7 +77,7 @@ function init() {
 function buildPrefsWidget() {
 	let settings = new Settings(Me.metadata['settings-schema']);
 	let widget = new PrefsWidget(settings);
-	widget.show_all();
+	// widget.show_all();
 
 	return widget;
 }
