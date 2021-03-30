@@ -7,6 +7,10 @@ const { Clutter, Gio, GLib, GObject, Meta, St } = imports.gi;
 const AppSystem  = imports.gi.Shell.AppSystem.get_default();
 const WinTracker = imports.gi.Shell.WindowTracker.get_default();
 
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+
+const Settings = Me.imports.settings.FildemGlobalMenuSettings;
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 const WindowMenu = imports.ui.windowMenu;
@@ -17,15 +21,6 @@ function log(msg) {
 	if (debug)
 		global.log('[FILDEM_MENU] ' + msg);
 }
-
-/// VARIABLES THAT MIGHT BE INTERESTING TO CUSTOMIZE
-// Distance between buttons
-const MIN_PADDING = 6;
-const NAT_PADDING = 10;
-// Doesn't hide the menu
-const FORCE_SHOW_MENU = false;
-// if it shows it, the menu appears at the end of it
-const SHOW_APPMENU_BUTTON = false;
 
 
 const WindowActions = class WindowActions {
@@ -227,8 +222,9 @@ class MenuButton extends PanelMenu.Button {
 
 	_onStyleChanged(actor) {
 		super._onStyleChanged(actor);
-		this._minHPadding = MIN_PADDING;
-		this._natHPadding = NAT_PADDING;
+		let padding = this._menuBar.extension.settings.get_int('min-padding');
+		this._minHPadding = padding;
+		this._natHPadding = padding * 2 + 2;
 	}
 
 	onButtonEvent(actor, event) {
@@ -244,9 +240,10 @@ class MenuButton extends PanelMenu.Button {
  * This is a manager not a container
  */
 const MenuBar = class MenuBar {
-	constructor(proxy) {
+	constructor(proxy, extension) {
 		this._menuButtons = [];
 		this._proxy = proxy;
+		this.extension = extension;
 		// pixels from x_0 to the start of the menu
 		this._width_offset = 300;
 		this.MARGIN_FIRST_ELEMENT = 4;
@@ -257,13 +254,41 @@ const MenuBar = class MenuBar {
 		this._proxy.listeners['MenuOnOff'].push(this._onMenuOnOff.bind(this));
 		Main.panel.reactive = true;
 		Main.panel.track_hover = true;
-		if (!FORCE_SHOW_MENU) {
-			Main.panel.connect('enter-event', this._onPanelEnter.bind(this));
-			Main.panel.connect('leave-event', this._onPanelLeave.bind(this));
-		}
-		
+
+		this._panelEvHandlers = [];
+		this._forceShowMenu = false;
+		this._showAppMenuButton = false;
+		this.setForceShowMenu();
+		this.setHideAppMenuButton()
+
 		Main.overview.connect('showing', this._onOverviewOpened.bind(this))
 		Main.overview.connect('hiding', this._onOverviewClosed.bind(this))
+	}
+
+	setForceShowMenu() {
+		this._forceShowMenu = !this.extension.settings.get_boolean('show-only-when-hover');
+
+		if (!this._forceShowMenu) {
+			this._panelEvHandlers.push(Main.panel.connect('enter-event', this._onPanelEnter.bind(this)));
+			this._panelEvHandlers.push(Main.panel.connect('leave-event', this._onPanelLeave.bind(this)));
+		} else {
+			for (let h of this._panelEvHandlers) {
+				Main.panel.disconnect(h);
+			}
+			this._panelEvHandlers = [];
+		}
+	}
+
+	setHideAppMenuButton() {
+		this._showAppMenuButton = !this.extension.settings.get_boolean('hide-app-menu');
+
+		let appBtn = Main.panel._leftBox.get_children().filter(item => {
+			item.get_first_child().constructor.name == 'AppMenuButton'
+		});
+		if (appBtn.length > 0) {
+			this._appMenuButton = appBtn[0];
+		}
+		this._restoreLabel();
 	}
 
 	addMenuButton(label, setmargin) {
@@ -288,7 +313,7 @@ const MenuBar = class MenuBar {
 			this.addMenuButton(menu, first);
 			first = false;
 		}
-		if (FORCE_SHOW_MENU && !Main.overview.visibleTarget) {
+		if (this._forceShowMenu && !Main.overview.visibleTarget) {
 			this._onPanelEnter();
 		}
 	}
@@ -310,7 +335,7 @@ const MenuBar = class MenuBar {
 				this._appMenuButton = firstChild;
 				let label = firstChild._label;
 
-				if (!SHOW_APPMENU_BUTTON) {
+				if (!this._showAppMenuButton) {
 					label.hide();
 				}
 				this._width_offset = width + el.width;
@@ -324,22 +349,31 @@ const MenuBar = class MenuBar {
 
 	_showMenu() {
 		this._menuButtons.forEach(btn => btn.show());
+		this._menuButtons.forEach(btn => btn.ease({
+			opacity: 255,
+			mode: Clutter.AnimationMode.EASE_OUT_QUART,
+			duration: 250
+		}));
 	}
 
 	_onPanelLeave() {
-		if (this._isShowingMenu || FORCE_SHOW_MENU)
+		if (this._isShowingMenu || this._forceShowMenu)
 			return;
 
 		this._hideMenu();
-		this._restoreLabel();
 	}
 
 	_hideMenu() {
-		this._menuButtons.forEach(btn => btn.hide());
+		this._menuButtons.forEach(btn => btn.ease({
+			opacity: 0,
+			mode: Clutter.AnimationMode.EASE_OUT_QUART,
+			duration: 100,
+			onComplete: () => { this._menuButtons.forEach(btn => btn.hide()); this._restoreLabel() }
+		}));
 	}
 
 	_restoreLabel() {
-		if (this._menuButtons.length > 0 && this._appMenuButton) {
+		if (this._appMenuButton) {
 			this._appMenuButton._label.show();
 		}
 	}
@@ -368,6 +402,7 @@ const MenuBar = class MenuBar {
 
 	_onWindowSwitched() {
 		this.removeAll();
+		this._restoreLabel();
 		const overview = Main.overview.visibleTarget;
 		const focusApp = WinTracker.focus_app || Main.panel.statusArea.appMenu._targetApp;
 		if (focusApp) {
@@ -395,7 +430,7 @@ const MenuBar = class MenuBar {
 	}
 
 	_onOverviewClosed() {
-		if (FORCE_SHOW_MENU) {
+		if (this._forceShowMenu) {
 			this._hideAppMenuButton();
 			this._showMenu();
 		}
@@ -404,6 +439,9 @@ const MenuBar = class MenuBar {
 	_disconnectAll() {
 		// AppSystem.disconnect(this._appStateChangedId);
 		// WinTracker.disconnect(this._notifyFocusAppId);
+		for (let h of this._panelEvHandlers) {
+			Main.panel.disconnect(h);
+		}
 		global.display.disconnect(this._notifyFocusWinId);
 	}
 
@@ -550,20 +588,54 @@ class MyProxy {
 	}
 };
 
-let menubar;
-let loop;
-let myProxy;
 
-function init() {
+class Extension {
+	constructor(settings) {
+		this.settings = settings;
+		this._handlerIds = [];
+		this.myProxy = new MyProxy();
+		this.menubar = new MenuBar(this.myProxy, this);
+
+		this._connectSettings();
+	}
+
+	_connectSettings() {
+		this._handlerIds.push(this.settings.connect(
+			'changed::show-only-when-hover',
+			() => { this.menubar.setForceShowMenu(); }
+		));
+		this._handlerIds.push(this.settings.connect(
+			'changed::hide-app-menu',
+			() => { this.menubar.setHideAppMenuButton(); }
+		));
+	}
+
+	destroy() {
+		this._disconnectSettings();
+
+		this.menubar.destroy();
+		this.myProxy.destroy();
+	}
+
+	_disconnectSettings() {
+		for (let h of this._handlerIds) {
+			this.settings.disconnect(h);
+		}
+	}
+}
+
+
+let extension;
+
+function init(metadata) {
 }
 
 function enable() {
-	myProxy = new MyProxy();
-	menubar = new MenuBar(myProxy);
+	let settings = new Settings(Me.metadata['settings-schema']);
+	extension = new Extension(settings);
 }
 
 function disable() {
-	menubar.destroy();
-	myProxy.destroy();
+	extension.destroy();
+	extension = null;
 }
-
