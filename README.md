@@ -6,7 +6,7 @@
 
 ![Fildem](https://user-images.githubusercontent.com/19943481/95288612-1d272a80-083f-11eb-9400-be88f61e054d.png)
 
-This project is a fork of gnomehud with the adition of a global menu bar. To install it you have to download this repo and install the extension copying/moving the `fildemGMenu@gonza.com` folder into `~/.local/share/gnome-shell/extensions`. Then, you have to run the app with `./run.sh`.
+This project is a fork of gnomehud with the adition of a global menu bar. It’s consist of a Gnome Shell extension and a external program, you must install both for the application to work. The extension is in [Gnome extensions website](https://extensions.gnome.org/extension/4114/fildem-global-menu/), and the app has a .deb package for Ubuntu, but it also works on Arch. Once installed, you have to run `fildem` from the command line if you installed the deb package, or execute `python3 run.py` if you downloaded the repo.
 
 You can also bring a HUD menu with Alt + Space.
 
@@ -16,26 +16,10 @@ This is a prototype, as I don’t know if people will like or how much it will l
 
 ### Ubuntu 20
 
-You can install the modules with
+There’s a deb package on the [releases section](https://github.com/gonzaarcr/Fildem/releases), I recomend downloading that. But if you want to install it manually, this are the dependencies for Ubuntu:
 
 ```
 sudo apt install libbamf3-dev bamfdaemon libkeybinder-3.0-dev appmenu-gtk2-module appmenu-gtk3-module unity-gtk-module-common
-```
-
-And install the python dependency:
-
-```
-pip3 install fuzzysearch
-```
-
-And then configure the following files:
-
-- Create the file `~/.gtkrc-2.0` and append `gtk-modules="appmenu-gtk-module"`
-- The file `~/.config/gtk-3.0/settings.ini` should have the line `gtk-modules="appmenu-gtk-module"` under [Settings]. If it doesn’t exist create it and paste the following
-
-```
-[Settings]
-gtk-modules="appmenu-gtk-module"
 ```
 
 ### Arch
@@ -46,7 +30,17 @@ I got it to run on a vm, since Arch is so customizable I can’t guaranted it wi
 pacman -S bamf appmenu-gtk-module libkeybinder3 libdbusmenu-gtk2 libdbusmenu-gtk3 libdbusmenu-qt5
 ```
 
-You also have to install `fuzzysearch` with pip (`pip3 install fuzzysearch`) and edit the files explained on the Ubuntu section.
+## Configuration
+
+In order for the application to work, you must configure the following files (aplies to all operating systems):
+
+- Create the file `~/.gtkrc-2.0` and append `gtk-modules="appmenu-gtk-module"`
+- The file `~/.config/gtk-3.0/settings.ini` should have the line `gtk-modules="appmenu-gtk-module"` under [Settings]. If it doesn’t exist create it and paste the following
+
+```
+[Settings]
+gtk-modules="appmenu-gtk-module"
+```
 
 ## Customization
 
