@@ -1,6 +1,6 @@
 import re
 
-from fuzzysearch import find_near_matches
+# from fuzzysearch import find_near_matches
 
 
 def match_replace(pattern, replacement, text):
