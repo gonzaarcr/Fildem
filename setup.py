@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
 	name='fildem',
-	version='0.6.1',
+	version='0.6.4',
 	author='Gonzalo',
 	author_email='gonzaarcr@gmail.com',
 	description='Fildem Global Menu for Gnome Desktop',
