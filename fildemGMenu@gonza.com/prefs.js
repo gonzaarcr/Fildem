@@ -1,9 +1,13 @@
 const GObject = imports.gi.GObject;
 const Gio = imports.gi.Gio;
 const Gtk = imports.gi.Gtk;
+const Config = imports.misc.config;
 
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings.FildemGlobalMenuSettings;
+
+const SHELL_VERSION = Config.PACKAGE_VERSION;
+
 
 const PrefsWidget = GObject.registerClass(
 class PrefsWidget extends Gtk.Box {	
@@ -15,11 +19,20 @@ class PrefsWidget extends Gtk.Box {
 		this._buildable.add_from_file(Me.path + '/settings.ui');
 
 		let prefsWidget = this._getWidget('prefs_widget');
-		this.add(prefsWidget);
+		if (SHELL_VERSION < '40') {
+			this.add(prefsWidget);
+		} else {
+			this.append(prefsWidget);
+		}
 
 		this._settings = settings;
 		this._bindBooleans();
     	this._bindIntSpins();
+	}
+
+	show_all() {
+		if (SHELL_VERSION < '40')
+			super.show_all();
 	}
 
 	_getWidget(name) {
