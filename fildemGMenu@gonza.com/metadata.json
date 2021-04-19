@@ -4,7 +4,8 @@
   "settings-schema": "org.gnome.shell.extensions.fildem-global-menu",
   "shell-version": [
     "3.36",
-    "3.38"
+    "3.38",
+    "40"
   ],
   "url": "https://github.com/gonzaarcr/Fildem",
   "uuid": "fildemGMenu@gonza.com"
