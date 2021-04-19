@@ -6,8 +6,8 @@
 		<property name="width_request">500</property>
 		<property name="visible">True</property>
 		<property name="can_focus">False</property>
-		<property name="margin_left">20</property>
-		<property name="margin_right">20</property>
+		<property name="margin-start">20</property>
+		<property name="margin-end">20</property>
 		<property name="margin_top">20</property>
 		<property name="margin_bottom">20</property>
 		<property name="hexpand">True</property>
@@ -27,17 +27,14 @@
 						<property name="visible">True</property>
 						<property name="can_focus">False</property>
 						<property name="valign">center</property>
+						<property name="hexpand">1</property>
+						<property name="xalign">0</property>
 						<property name="label">Button paddings (tweak this if the menu and items desynchronize)</property>
 					</object>
-					<packing>
-						<property name="expand">False</property>
-						<property name="fill">True</property>
-						<property name="position">0</property>
-					</packing>
 				</child>
 				<child>
 					<object class="GtkAdjustment" id="adjustment_padding">
-						<property name="lower">1</property>
+						<property name="lower">0</property>
 						<property name="upper">50</property>
 						<property name="value">6</property>
 						<property name="step-increment">1</property>
@@ -48,19 +45,8 @@
 						<property name="valign">center</property>
 						<property name="adjustment">adjustment_padding</property>
 					</object>
-					<packing>
-						<property name="expand">False</property>
-						<property name="fill">True</property>
-						<property name="pack_type">end</property>
-						<property name="position">1</property>
-					</packing>
 				</child>
 			</object>
-			<packing>
-				<property name="expand">False</property>
-				<property name="fill">True</property>
-				<property name="position">0</property>
-			</packing>
 		</child>
 
 
@@ -76,13 +62,10 @@
 						<property name="visible">True</property>
 						<property name="can_focus">False</property>
 						<property name="valign">center</property>
+						<property name="hexpand">1</property>
+						<property name="xalign">0</property>
 						<property name="label">Show menu only when the mouse is over the panel</property>
 					</object>
-					<packing>
-						<property name="expand">False</property>
-						<property name="fill">True</property>
-						<property name="position">0</property>
-					</packing>
 				</child>
 				<child>
 					<object class="GtkSwitch" id="show_only_when_hover">
@@ -90,19 +73,8 @@
 						<property name="can_focus">True</property>
 						<property name="valign">center</property>
 					</object>
-					<packing>
-						<property name="expand">False</property>
-						<property name="fill">True</property>
-						<property name="pack_type">end</property>
-						<property name="position">1</property>
-					</packing>
 				</child>
 			</object>
-			<packing>
-				<property name="expand">False</property>
-				<property name="fill">True</property>
-				<property name="position">1</property>
-			</packing>
 		</child>
 
 
@@ -118,13 +90,10 @@
 						<property name="visible">True</property>
 						<property name="can_focus">False</property>
 						<property name="valign">center</property>
+						<property name="hexpand">1</property>
+						<property name="xalign">0</property>
 						<property name="label">Hide the app label when showing the menu</property>
 					</object>
-					<packing>
-						<property name="expand">False</property>
-						<property name="fill">True</property>
-						<property name="position">0</property>
-					</packing>
 				</child>
 				<child>
 					<object class="GtkSwitch" id="hide_app_menu">
@@ -132,19 +101,8 @@
 						<property name="can_focus">True</property>
 						<property name="valign">center</property>
 					</object>
-					<packing>
-						<property name="expand">False</property>
-						<property name="fill">True</property>
-						<property name="pack_type">end</property>
-						<property name="position">1</property>
-					</packing>
 				</child>
 			</object>
-			<packing>
-				<property name="expand">False</property>
-				<property name="fill">True</property>
-				<property name="position">2</property>
-			</packing>
 		</child>
 
 	</object>

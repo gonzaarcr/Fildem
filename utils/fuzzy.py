@@ -1,6 +1,6 @@
 import re
 
-from fuzzysearch import find_near_matches
+# from fuzzysearch import find_near_matches
 
 
 def match_replace(pattern, replacement, text):
@@ -44,6 +44,8 @@ class FuzzyMatch(object):
 
 		if not contains_words(self.value, words):
 			return -1
+		else:
+			return 1
 
 		fuzzy = find_near_matches(query, self.value, max_l_dist=1)
 		score = sum(map(lambda m: m.dist, fuzzy))

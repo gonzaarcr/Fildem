@@ -13,7 +13,11 @@ Its replacement is the gnome extension
 '''
 # if there’s a problem, maybe try this
 # loginctl show-session $(loginctl | grep $(whoami) | awk '{print $1}') -p Type
-backend = os.environ['XDG_SESSION_TYPE']
+# 'Wayland' means nothing, what matters is if it is x11 or not
+try:
+	backend = os.environ['XDG_SESSION_TYPE']
+except:
+	backend = 'Wayland'
 
 if backend == 'x11':
 	gi.require_version('Bamf', '3')

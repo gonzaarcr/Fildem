@@ -224,7 +224,7 @@ class MenuButton extends PanelMenu.Button {
 		super._onStyleChanged(actor);
 		let padding = this._menuBar.extension.settings.get_int('min-padding');
 		this._minHPadding = padding;
-		this._natHPadding = padding * 2 + 2;
+		this._natHPadding = padding;
 	}
 
 	onButtonEvent(actor, event) {
