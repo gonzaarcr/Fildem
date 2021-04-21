@@ -1,0 +1,11 @@
+Package: python3-fildem
+Source: fildem
+Version: 0.6.4
+Architecture: all
+Maintainer: Gonzalo <gonza.ar.cr+fildem@gmail.com>
+Original-Maintainer: Gonzalo <gonza.ar.cr+fildem@gmail.com>
+Depends: libbamf3-dev, bamfdaemon, libkeybinder-3.0-dev, appmenu-gtk2-module, appmenu-gtk3-module, unity-gtk-module-common, python3-gi, python3:any
+Section: python
+Priority: optional
+Homepage: https://github.com/gonzaarcr/fildem
+Description: This project is a fork of gnomehud with the adition of a global menu bar.
