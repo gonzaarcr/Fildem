@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+if which py3compile >/dev/null 2>&1; then
+	py3compile -p python3-fildem 
+fi
+if which pypy3compile >/dev/null 2>&1; then
+	pypy3compile -p python3-fildem  || true
+fi
+
