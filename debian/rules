@@ -20,7 +20,7 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	set -ex; for python in $(shell py3versions -r); do \
-		$$python setup.py install --root=$(CURDIR)/debian/fildem --install-layout=deb; \
+		$$python setup.py install --root=$(CURDIR)/debian/python3-fildem --install-layout=deb; \
 	done
 
 override_dh_python3:
