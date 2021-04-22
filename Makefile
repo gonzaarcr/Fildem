@@ -10,3 +10,4 @@ clean:
 	rm -rf build/
 	rm -rf *.egg-info/
 	rm -rf debian/usr/
+	rm debian/DEBIAN/md5sums
