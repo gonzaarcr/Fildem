@@ -8,6 +8,8 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Gio
 
+from utils.wayland import is_wayland
+
 
 def get_separator():
 	return u'\u0020\u0020\u00BB\u0020\u0020'
@@ -126,8 +128,11 @@ class Menu(Gtk.Menu):
 
 class CommandWindow(Gtk.ApplicationWindow):
 
+	wayland = is_wayland()
+
 	def __init__(self, *args, **kwargs):
-		kwargs['type'] = Gtk.WindowType.POPUP
+		if not self.wayland:
+			kwargs['type'] = Gtk.WindowType.POPUP
 		super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
 		self.app = kwargs['application']
 		self.seat = Gdk.Display.get_default().get_default_seat()
@@ -244,10 +249,16 @@ class CommandWindow(Gtk.ApplicationWindow):
 		inject_custom_style(self, styles)
 
 	def grab_keyboard(self, window, status=Gdk.GrabStatus.SUCCESS):
+		if self.wayland:
+			return
+
 		while self.seat.grab(window, Gdk.SeatCapabilities.KEYBOARD, False, None, None, None) != status:
 			time.sleep(0.1)
 
 	def ungrab_keyboard(self):
+		if self.wayland:
+			return
+
 		self.seat.ungrab()
 
 	def emulate_focus_out_event(self):
