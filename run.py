@@ -9,7 +9,7 @@ def main():
 	if sys.path[0] != '':
 		os.chdir(sys.path[0])
 
-	if os.environ['XDG_SESSION_TYPE'] == 'x11':
+	if os.environ['XDG_SESSION_TYPE'] != 'x11':
 		os.environ['GDK_BACKEND'] = 'x11'
 
 	os.environ['UBUNTU_MENUPROXY'] = '0'
