@@ -11,3 +11,4 @@ To build the Arch package `makepkg`
 # Run this branch
 
 `python3 -c "from fildem import run; run.main()"`
+
