@@ -13,7 +13,8 @@ from gi.repository import GObject
 from fildem.utils.fuzzy import FuzzyMatch
 from fildem.utils.fuzzy import normalize_string
 from fildem.utils.fuzzy import match_replace
-from fildem.utils.window import WindowActions, backend
+from fildem.utils.window import WindowActions
+from fildem.utils.wayland import is_wayland
 
 
 def normalize_markup(text):
@@ -232,8 +233,10 @@ class CommandList(Gtk.ListBox):
 
 class CommandWindow(Gtk.ApplicationWindow):
 
+	wayland = is_wayland()
+
 	def __init__(self, *args, **kwargs):
-		if backend == 'x11':
+		if not self.wayland:
 			kwargs['type'] = Gtk.WindowType.POPUP
 		super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
 
@@ -335,9 +338,10 @@ class CommandWindow(Gtk.ApplicationWindow):
 			time.sleep(0.1)
 
 	def emulate_focus_out_event(self):
-		tstamp = Gdk.CURRENT_TIME
-		Gdk.keyboard_ungrab(tstamp)
-		Gdk.pointer_ungrab(tstamp)
+		if not self.wayland:
+			tstamp = Gdk.CURRENT_TIME
+			Gdk.keyboard_ungrab(tstamp)
+			Gdk.pointer_ungrab(tstamp)
 
 		fevent = Gdk.Event(Gdk.EventType.FOCUS_CHANGE)
 		self.emit('focus-out-event', fevent)
@@ -353,12 +357,13 @@ class CommandWindow(Gtk.ApplicationWindow):
 		Gtk.main_do_event(event)
 
 	def on_window_show(self, window):
-		window = self.get_window()
-		status = Gdk.GrabStatus.SUCCESS
-		tstamp = Gdk.CURRENT_TIME
+		if not self.wayland:
+			window = self.get_window()
+			status = Gdk.GrabStatus.SUCCESS
+			tstamp = Gdk.CURRENT_TIME
 
-		self.grab_keyboard(window, status, tstamp)
-		self.grab_pointer(window, status, tstamp)
+			self.grab_keyboard(window, status, tstamp)
+			self.grab_pointer(window, status, tstamp)
 
 		self.search_entry.grab_focus()
 

@@ -5,6 +5,8 @@ gi.require_version('Keybinder', '3.0')
 
 from gi.repository import Keybinder
 
+from fildem.utils.wayland import is_wayland
+
 
 class GlobalKeybinder:
 	"""
@@ -17,8 +19,7 @@ class GlobalKeybinder:
 
 	@classmethod
 	def create(cls, callback=None):
-		backend = os.environ['XDG_SESSION_TYPE']
-		if backend == 'x11':
+		if not is_wayland():
 			return cls(callback)
 		else:
 			return DummyKeybinder()
