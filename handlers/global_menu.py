@@ -131,8 +131,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 	wayland = is_wayland()
 
 	def __init__(self, *args, **kwargs):
-		if not self.wayland:
-			kwargs['type'] = Gtk.WindowType.POPUP
+		kwargs['type'] = Gtk.WindowType.POPUP
 		super(Gtk.ApplicationWindow, self).__init__(*args, **kwargs)
 		self.app = kwargs['application']
 		self.seat = Gdk.Display.get_default().get_default_seat()
