@@ -6,7 +6,7 @@
 
 ![Fildem](https://user-images.githubusercontent.com/19943481/95288612-1d272a80-083f-11eb-9400-be88f61e054d.png)
 
-This project is a fork of gnomehud with the adition of a global menu bar. It’s consist of a Gnome Shell extension and a external program, you must install both for the application to work. The extension is in [Gnome extensions website](https://extensions.gnome.org/extension/4114/fildem-global-menu/), and the app has a .deb package for Ubuntu, but it also works on Arch (if you download the repo, make sure to download the latest tag! master may be unstable). Once installed, you have to run `fildem` from the command line if you installed the deb package, or execute `python3 run.py` if you downloaded the repo. If you are on Wayland, I recommend using `export GTK_BACKEND=x11` before executing, although it doesn’t work really well yet.
+This project is a fork of gnomehud with the adition of a global menu bar. It’s consist of a Gnome Shell extension and a external program, you must install both for the application to work. The extension is in [Gnome extensions website](https://extensions.gnome.org/extension/4114/fildem-global-menu/), and the app has a .deb package for Ubuntu, but it also works on Arch (if you download the repo, make sure to download the latest tag! master may be unstable). Once installed, you have to run `fildem` from the command line if you installed the deb package, or execute `python3 -c "from fildem import run; run.main()"` if you downloaded the repo.
 
 You can also bring a HUD menu with Alt + Space.
 
