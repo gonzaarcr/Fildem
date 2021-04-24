@@ -3,7 +3,7 @@
 import os
 import sys
 
-from command import main as command_main
+from fildem.command import main as command_main
 
 def main():
 	if sys.path[0] != '':

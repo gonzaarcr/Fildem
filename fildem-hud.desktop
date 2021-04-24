@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=0.6.4
+Type=Application
+Name=Fildem Hud
+GenericName=Fildem Global Menu Hud
+Comment=Fildem Global Menu Hud
+Exec=fildem-hud
+TryExec=fildem-hud
+Icon=search
+Terminal=false
+Type=Application

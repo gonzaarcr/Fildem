@@ -4,15 +4,15 @@ import time
 
 from gi.repository import GLib
 
-from utils.fuzzy import match_replace
-from utils.global_keybinder import GlobalKeybinder
-from utils.window import WindowManager
-from utils.service import MyService
+from fildem.utils.fuzzy import match_replace
+from fildem.utils.global_keybinder import GlobalKeybinder
+from fildem.utils.window import WindowManager
+from fildem.utils.service import MyService
 
-from handlers.default import HudMenu
-from handlers.global_menu import GlobalMenu
+from fildem.handlers.default import HudMenu
+from fildem.handlers.global_menu import GlobalMenu
 
-from menu_model.menu_model import DbusGtkMenu, DbusAppMenu
+from fildem.menu_model.menu_model import DbusGtkMenu, DbusAppMenu
 
 
 class DbusMenu:

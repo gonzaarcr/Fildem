@@ -8,7 +8,7 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Gio
 
-from utils.wayland import is_wayland
+from fildem.utils.wayland import is_wayland
 
 
 def get_separator():

@@ -5,7 +5,7 @@ gi.require_version('Keybinder', '3.0')
 
 from gi.repository import Keybinder
 
-from utils.wayland import is_wayland
+from fildem.utils.wayland import is_wayland
 
 
 class GlobalKeybinder:

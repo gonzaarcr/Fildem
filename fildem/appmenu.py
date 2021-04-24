@@ -5,8 +5,8 @@ import dbus
 from gi.repository import GLib
 from dbus.mainloop.glib import DBusGMainLoop
 
-from utils.service import BUS_NAME
-from utils.service import AppMenuService, MyService
+from fildem.utils.service import BUS_NAME
+from fildem.utils.service import AppMenuService, MyService
 
 
 def run_service():

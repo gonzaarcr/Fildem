@@ -4,8 +4,8 @@ import os
 
 from gi.repository import Gio
 
-from utils.service import MyService
-from utils.wayland import is_wayland
+from fildem.utils.service import MyService
+from fildem.utils.wayland import is_wayland
 
 '''
 Everything in this file is due to Wayland compatibility due to Bamf.

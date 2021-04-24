@@ -3,12 +3,12 @@
 import os
 import threading
 
-from handlers.default import HudMenu
-from handlers.global_menu import GlobalMenu
-from handlers.rofi import RofiMenu
+from fildem.handlers.default import HudMenu
+from fildem.handlers.global_menu import GlobalMenu
+from fildem.handlers.rofi import RofiMenu
 
 def run_command(module, function):
-	args = 'python3 -c "from %s import %s as run; run()"'
+	args = 'python3 -c "from fildem.%s import %s as run; run()"'
 	args = args % (module, function)
 
 	proc = threading.Thread(target=os.system, args=[args])

@@ -3,7 +3,7 @@
 import dbus
 import time
 
-from menu_model.menu_item import DbusGtkMenuItem, DbusAppMenuItem
+from fildem.menu_model.menu_item import DbusGtkMenuItem, DbusAppMenuItem
 
 class DbusGtkMenu(object):
 
