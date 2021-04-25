@@ -148,6 +148,8 @@ class CommandWindow(Gtk.ApplicationWindow):
 		self.set_skip_taskbar_hint(True)
 		self.set_destroy_with_parent(True)
 
+		self.set_decorated(False)
+
 		self.my_menu_bar = Gtk.MenuBar()
 		self.accel_group = Gtk.AccelGroup()
 
