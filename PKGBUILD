@@ -17,7 +17,6 @@ md5sums=('SKIP')
 
 pkgver() {
     cd "$srcdir/fildem"
-    git checkout pypkg &> /dev/null
     git tag | tail -1
 }
 
