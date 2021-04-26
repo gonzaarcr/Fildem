@@ -17,7 +17,7 @@ md5sums=('SKIP')
 
 pkgver() {
     cd "$srcdir/fildem"
-    git tag | tail -1
+    python3 -c "import fildem; print(fildem.__version__)"
 }
 
 build() {

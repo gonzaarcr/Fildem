@@ -1,11 +1,13 @@
 import setuptools
 
+import fildem
+
 with open('README.md', 'r') as fh:
 	long_description = fh.read()
 
 setuptools.setup(
 	name='fildem',
-	version='0.6.5',
+	version=fildem.__version__,
 	author='Gonzalo',
 	author_email='gonzaarcr@gmail.com',
 	description='Fildem Global Menu for Gnome Desktop',
