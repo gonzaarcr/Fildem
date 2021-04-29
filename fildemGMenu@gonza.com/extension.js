@@ -236,6 +236,42 @@ class MenuButton extends PanelMenu.Button {
 	}
 });
 
+const Cache = class Cache {
+	constructor() {
+		this.N = 10;
+		this.lru = [];
+		this.entries = {};
+		this.lastQueriedKey = '';
+	}
+
+	get(key) {
+		this.lastQueriedKey = key;
+		return this.entries[key];
+	}
+
+	_set(key, value) {
+		if (this.entries[key]) {
+			const oldItem = this.lru.splice(this.lru.find(key), 1);
+		}
+		this.lru.push(key);
+		this.entries[key] = value;
+
+		if (this.lru.length > N) {
+			const toRemove = this.lru.pop();
+			this.entries[toRemove] = undefined;
+		}
+	}
+
+	withCache(f) {
+		const self = this;
+		const g = (param) => {
+			self._set(self.lastQueriedKey, param);
+			f(param);
+		}
+		return g;
+	}
+}
+
 /**
  * This is a manager not a container
  */
@@ -249,8 +285,10 @@ const MenuBar = class MenuBar {
 		this.MARGIN_FIRST_ELEMENT = 4;
 		this._isShowingMenu = false;
 
+		this._cache = new Cache();
+
 		this._notifyFocusWinId = global.display.connect('notify::focus-window', this._onWindowSwitched.bind(this));
-		this._proxy.listeners['SendTopLevelMenus'].push(this.setMenus.bind(this));
+		this._proxy.listeners['SendTopLevelMenus'].push(this._cache.withCache(this.setMenus.bind(this)));
 		this._proxy.listeners['MenuOnOff'].push(this._onMenuOnOff.bind(this));
 		Main.panel.reactive = true;
 		Main.panel.track_hover = true;
@@ -259,10 +297,10 @@ const MenuBar = class MenuBar {
 		this._forceShowMenu = false;
 		this._showAppMenuButton = false;
 		this.setForceShowMenu();
-		this.setHideAppMenuButton()
+		this.setHideAppMenuButton();
 
-		Main.overview.connect('showing', this._onOverviewOpened.bind(this))
-		Main.overview.connect('hiding', this._onOverviewClosed.bind(this))
+		Main.overview.connect('showing', this._onOverviewOpened.bind(this));
+		Main.overview.connect('hiding', this._onOverviewClosed.bind(this));
 	}
 
 	setForceShowMenu() {
@@ -409,6 +447,14 @@ const MenuBar = class MenuBar {
 			let windowData = {};
 			// TODO does the window matter?
 			let win = focusApp.get_windows()[0];
+			let appId = focusApp.get_id(); // *.desktop			
+
+			// Check cache
+			let cachedValue = this._cache.get(appId);
+			if (cachedValue) {
+				this.setMenus(cachedValue);
+			}
+
 			// global.log(`app id: ${focusApp.get_id()} win id: ${win.get_id()}`);
 			// TODO check pixel-saver extension for others way of obtaining xid
 			let xid = '';
