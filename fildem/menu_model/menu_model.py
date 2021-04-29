@@ -53,7 +53,7 @@ class DbusGtkMenu(object):
 			for menu in results:
 				self.results[(menu[0], menu[1])] = menu[2]
 
-		# self.collect_entries()
+		self.collect_entries()
 
 	def collect_entries(self, menu=(0, 0), labels=[]):
 		section = (menu[0], menu[1])
@@ -111,17 +111,6 @@ class DbusGtkMenu(object):
 		checked = description[2]
 		return enabled, checked
 
-	def get_top_level_menus(self):
-		if not len(self.results):
-			return []
-
-		section = (0, 0)
-		while len(self.results[section]) == 1 and ':section' in self.results[section][0]:
-			section = self.results[section][0][':section']
-		menus = self.results[section]
-		menus = list(map(lambda x: x.get('label', ''), menus))
-		return menus
-
 
 class DbusAppMenu(object):
 
@@ -172,24 +161,9 @@ class DbusAppMenu(object):
 		if self.interface:
 			self.results = self.interface.GetLayout(0, -1, dbus.Array(signature="s"))
 			try:
-				self.top_level_menus = self.collect_top_level_menus(self.results[1])
+				self.collect_entries(self.results[1])
 			except Exception:
 				pass
-
-	def collect_top_level_menus(self, item):
-		"""
-		A reduced version of collect_entries to make it more responsive.
-		Only collect the first level of menus to show immediately.
-		"""
-		top_level_menus = []
-		item_id = item[0]
-		# self.interface.AboutToShow(item_id)
-		# self.interface.Event(item_id, 'opened', 'not used', dbus.UInt32(time.time()))
-		item = self.interface.GetLayout(item_id, -1, dbus.Array(signature="s"))[1]
-		if len(item[2]):
-			for c in item[2]:
-				top_level_menus.append(c[1].get('label', ''))
-		return top_level_menus
 
 	def collect_entries(self, item=None, labels=None):
 		if self.results is None:
@@ -203,10 +177,7 @@ class DbusAppMenu(object):
 
 		if 'children-display' in item[1]:
 			item_id = item[0]
-			try:
-				self.interface.AboutToShow(item_id)
-			except Exception:
-				pass
+			self.interface.AboutToShow(item_id)
 			self.interface.Event(item_id, 'opened', 'not used', dbus.UInt32(time.time()))
 			item = self.interface.GetLayout(item_id, -1, dbus.Array(signature="s"))[1]
 
@@ -220,8 +191,3 @@ class DbusAppMenu(object):
 		elif bool(menu_item.label) or menu_item.separator:
 			self.actions[menu_item.text] = menu_item.action
 			self.items.append(menu_item)
-
-
-	def get_top_level_menus(self):
-		return self.top_level_menus
-

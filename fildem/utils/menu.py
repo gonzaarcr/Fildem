@@ -111,33 +111,22 @@ class DbusMenu:
 		self.retry_timer_id = 0
 		self._init_window()
 
-	def _add_retry(self):
+	def _update_menus(self):
+		self.gtkmenu.get_results()
+		if not len(self.gtkmenu.items):
+			self.appmenu.get_results()
+
 		N = 2 # Amount of tries
 		if self.tries < N and not len(self.items):
 			self.tries += 1
 			self.retry_timer_id = GLib.timeout_add_seconds(2, self._retry_init)
 
-	def collect_entries(self):
-		def collect():
-			self.collect_timer = 0
-			self.gtkmenu.collect_entries()
-			self.appmenu.collect_entries()
-
-		self.collect_timer = GLib.timeout_add(200, collect)
-
 	def _update(self):
-		self.gtkmenu.get_results()
-		top_level_menus = self.gtkmenu.get_top_level_menus()
-		if not len(top_level_menus):
-			self.appmenu.get_results()
-			top_level_menus = self.appmenu.get_top_level_menus()
-
-		if not len(top_level_menus):
-			self._add_retry()
-		else:
-			self.collect_entries()
-		self._send_msg(top_level_menus)
+		self._update_menus()
+		top_level_menus = map(lambda it: it.path[0] if len(it.path) else None, self.items)
+		top_level_menus = list(filter(None, dict.fromkeys(top_level_menus)))
 		self._handle_shortcuts(top_level_menus)
+		self._send_msg(top_level_menus)
 
 	def _send_msg(self, top_level_menus):
 		if len(top_level_menus) == 0:
