@@ -8,8 +8,7 @@ depends=('bamf'
          'appmenu-gtk-module'
          'libkeybinder3'
          'libdbusmenu-gtk2'
-         'libdbusmenu-gtk3'
-         'libdbusmenu-qt5')
+         'libdbusmenu-gtk3')
 makedepends=('git')
 provides=("python3-fildem=$pkgver")
 source=('git+https://github.com/gonzaarcr/fildem.git')
