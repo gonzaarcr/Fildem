@@ -251,12 +251,12 @@ const Cache = class Cache {
 
 	_set(key, value) {
 		if (this.entries[key]) {
-			const oldItem = this.lru.splice(this.lru.find(key), 1);
+			const oldItem = this.lru.splice(this.lru.indexOf(key), 1);
 		}
 		this.lru.push(key);
 		this.entries[key] = value;
 
-		if (this.lru.length > N) {
+		if (this.lru.length > this.N) {
 			const toRemove = this.lru.pop();
 			this.entries[toRemove] = undefined;
 		}
@@ -476,7 +476,7 @@ const MenuBar = class MenuBar {
 	}
 
 	_onOverviewClosed() {
-		if (this._forceShowMenu) {
+		if (this._forceShowMenu && this._menuButtons.length) {
 			this._hideAppMenuButton();
 			this._showMenu();
 		}
@@ -494,6 +494,7 @@ const MenuBar = class MenuBar {
 	destroy() {
 		this._disconnectAll();
 		this.removeAll();
+		this._restoreLabel();
 	}
 };
 
