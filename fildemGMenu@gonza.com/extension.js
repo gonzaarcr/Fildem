@@ -369,7 +369,12 @@ const MenuBar = class MenuBar {
 		let width = 0;
 		for (let el of Main.panel._leftBox.get_children()) {
 			let firstChild = el.get_first_child();
+			if (firstChild === this._menuButtons[0]) {
+				this._width_offset = width;
+				break;
+			}
 			if (firstChild.constructor.name == 'AppMenuButton') {
+				// [Deprecated]
 				this._appMenuButton = firstChild;
 				let label = firstChild._label;
 
@@ -377,7 +382,7 @@ const MenuBar = class MenuBar {
 					label.hide();
 				}
 				this._width_offset = width + el.width;
-				break;
+				// break;
 			}
 			if (el.is_visible()) {
 				width += el.get_width();
