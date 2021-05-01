@@ -473,6 +473,9 @@ const MenuBar = class MenuBar {
 				}
 			}
 			this._proxy.WindowSwitched(windowData);
+		} else {
+			this._hideMenu();
+			this._restoreLabel();
 		}
 	}
 
