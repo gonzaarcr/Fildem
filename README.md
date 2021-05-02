@@ -6,29 +6,25 @@
 
 ![Fildem](https://user-images.githubusercontent.com/19943481/95288612-1d272a80-083f-11eb-9400-be88f61e054d.png)
 
-This project is a fork of gnomehud with the adition of a global menu bar. It’s consist of a Gnome Shell extension and a external program, you must install both for the application to work. The extension is in [Gnome extensions website](https://extensions.gnome.org/extension/4114/fildem-global-menu/), and the app has a .deb package for Ubuntu, but it also works on Arch (if you download the repo, make sure to download the latest tag! master may be unstable). Once installed, you have to run `fildem` from the command line if you installed the deb package, or execute `python3 -c "from fildem import run; run.main()"` if you downloaded the repo.
+This project is a fork of gnomehud with the adition of a global menu bar. It’s consist of a Gnome Shell extension and a external program, you must install both for the application to work.
 
-You can also bring a HUD menu with Alt + Space.
+You can also bring a HUD menu with Alt + Space (on Xorg).
 
 This is a prototype, as I don’t know if people will like or how much it will last until devs nuke it, so fell free to let me know your opinion.
 
 ## Installation
 
-### Ubuntu 20
+### Extension
 
-There’s a deb package on the [releases section](https://github.com/gonzaarcr/Fildem/releases), I recomend downloading that. But if you want to install it manually, this are the dependencies for Ubuntu:
+To install the extension, download it from the [Gnome extensions website](https://extensions.gnome.org/extension/4114/fildem-global-menu/).
 
-```
-sudo apt install libbamf3-dev bamfdaemon libkeybinder-3.0-dev appmenu-gtk2-module appmenu-gtk3-module unity-gtk-module-common
-```
+### Ubuntu
+
+Download the .deb file from the releases section and run `sudo apt install ./fildem_*.deb`
 
 ### Arch
 
-I got it to run on a vm, since Arch is so customizable I can’t guaranted it will work on all system, but the modules installed were
-
-```
-pacman -S bamf appmenu-gtk-module libkeybinder3 libdbusmenu-gtk2 libdbusmenu-gtk3 libdbusmenu-qt5
-```
+Download the .zst file from the releases section and run `sudo pacman -U ./python3-fildem*.zst`
 
 ## Configuration
 
@@ -41,6 +37,10 @@ In order for the application to work, you must configure the following files (ap
 [Settings]
 gtk-modules="appmenu-gtk-module"
 ```
+
+## Running
+
+After installation you’ll have two executables, `fildem` and `fildem-hud`.  To check if it works use the first one. `fildem-hud` is for using he HUD, if you are on Xorg, you already have it bound to Alt + Space. If you are on Wayland, you can bind some keybinding to that command.
 
 ## Customization
 
