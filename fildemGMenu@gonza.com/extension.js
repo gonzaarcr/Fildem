@@ -446,6 +446,7 @@ const MenuBar = class MenuBar {
 	_onWindowSwitched() {
 		this.removeAll();
 		this._restoreLabel();
+		this._hideMenu();
 		const overview = Main.overview.visibleTarget;
 		const focusApp = WinTracker.focus_app || Main.panel.statusArea.appMenu._targetApp;
 		if (focusApp) {
@@ -473,9 +474,6 @@ const MenuBar = class MenuBar {
 				}
 			}
 			this._proxy.WindowSwitched(windowData);
-		} else {
-			this._hideMenu();
-			this._restoreLabel();
 		}
 	}
 
