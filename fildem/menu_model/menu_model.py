@@ -61,8 +61,9 @@ class DbusGtkMenu(object):
 		section = (menu[0], menu[1])
 		for menu in self.results.get(section, []):
 			if 'label' in menu:
-				# if len(labels) == 0:
-				# 	self.top_level_menus.append(menu.get('label', None)))
+				if len(labels) == 0:
+					self.top_level_menus.append(menu.get('label', None))
+
 				menu_item = DbusGtkMenuItem(menu, labels)
 				menu_item.section = section
 				description = self.describe(menu_item.action)
@@ -192,9 +193,8 @@ class DbusAppMenu(object):
 			menu_path = labels + [menu_item.label]
 
 		if len(item[2]):
-			# if not self.top_level_menus:
-			# 	self.top_level_menus = list(map(lambda c: c[1].get('label', ''), item[2]))
-			# 	print(f'collect_entries:194 {self.top_level_menus=}')
+			if not self.top_level_menus:
+				self.top_level_menus = list(map(lambda c: c[1].get('label', ''), item[2]))
 
 			for child in item[2]:
 				self.collect_entries(child, menu_path)

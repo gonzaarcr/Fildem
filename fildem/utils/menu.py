@@ -123,8 +123,11 @@ class DbusMenu:
 
 	def _update(self):
 		self._update_menus()
-		top_level_menus = map(lambda it: it.path[0] if len(it.path) else None, self.items)
-		top_level_menus = list(filter(None, dict.fromkeys(top_level_menus)))
+		if len(self.gtkmenu.top_level_menus):
+			top_level_menus = self.gtkmenu.top_level_menus
+		else:
+			top_level_menus = self.appmenu.top_level_menus
+
 		self._handle_shortcuts(top_level_menus)
 		self._send_msg(top_level_menus)
 
