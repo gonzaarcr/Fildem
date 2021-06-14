@@ -58,14 +58,7 @@ If the menu shown on the panel is shifted with relation to the one that appears,
 
 ### Remove space in between buttons
 
-In some gnome themes, the buttons have a small spacing between them. This can make the buttons easy to miss and unfocusing our window if it’s not maximized. To fix this, add this somewhere on your `gnome-shell.css` theme:
-
-```
-#panel #panelLeft {
-  spacing: 0px; }
-#panel #panelLeft .panel-button {
-  spacing: 0px; }
-```
+In some gnome themes, the buttons have a small spacing between them. This can make the buttons easy to miss and unfocusing our window if it’s not maximized. To fix this, go to the extension settings in the tweak tool and reduce the "Button paddings" option.
 
 ## Running the program at startup
 
