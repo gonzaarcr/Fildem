@@ -54,7 +54,11 @@ The AppMenu button shows the application name or window title (if you have some 
 
 ### Reduce space between buttons
 
-If the menu shown on the panel is shifted with relation to the one that appears, you can tweak the padding in the preferences window of the extension.
+If the menu shown on the panel is shifted with relation to the one that appears, like this:
+
+![Screenshot from 2021-06-17 11-09-00](https://user-images.githubusercontent.com/864630/122452193-da852880-cf5d-11eb-8ca8-27e481ab682c.png)
+
+you can tweak the "Button padding" in the preferences window of the extension (accessible from the tweak tool).
 
 ### Remove space in between buttons
 
