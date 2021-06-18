@@ -5,6 +5,7 @@ import time
 
 from fildem.menu_model.menu_item import DbusGtkMenuItem, DbusAppMenuItem
 
+
 class DbusGtkMenu(object):
 
 	def __init__(self, session, window):
@@ -23,6 +24,7 @@ class DbusGtkMenu(object):
 		self.appmenu_path = window.get_utf8_prop('_GTK_APP_MENU_OBJECT_PATH')
 
 		self.top_level_menus = []
+		self.signal_matcher = []
 
 	def activate(self, selection):
 		action = self.actions.get(selection, '')
@@ -51,6 +53,10 @@ class DbusGtkMenu(object):
 				interface.End([x for x in range(1024)])
 			except Exception:
 				continue
+
+			s = interface.connect_to_signal('Changed', self.on_actions_changed)
+			self.signal_matcher.append(s)
+			self.connect_to_actions_iface(object)
 
 			for menu in results:
 				self.results[(menu[0], menu[1])] = menu[2]
@@ -116,6 +122,39 @@ class DbusGtkMenu(object):
 		checked = description[2]
 		return enabled, checked
 
+	def connect_to_actions_iface(self, object):
+		try:
+			iface = dbus.Interface(object, dbus_interface='org.gtk.Actions')
+			s = iface.connect_to_signal('Changed', self.on_gtk_actions_changed)
+			self.signal_matcher.append(s)
+		except Exception as e:
+			pass
+
+	def on_actions_changed(self, *args):
+		print(f'on_actions_changed {args=}')
+
+	def on_gtk_actions_changed(self, removed_actions, enabled_changed, state_changed, new_actions):
+		"""
+		The name of the actions doesn't have the unity. app. or win. preprended
+		"""
+		for action_name in enabled_changed:
+			item = filter(lambda it: it.action.endswith(action_name), self.items)
+			item = next(item, None)
+			if item is not None:
+				item.set_enabled(enabled_changed[action_name])
+			# item.set_description(self.describe(item.action))
+
+		for action_name in state_changed:
+			item = filter(lambda it: it.action.endswith(action_name), self.items)
+			item = next(item, None)
+			if item is not None:
+				item.set_description(self.describe(item.action))
+
+	def remove_actions_listener(self):
+		for s in self.signal_matcher:
+			s.remove()
+		self.signal_matcher = []
+
 
 class DbusAppMenu(object):
 
@@ -125,6 +164,7 @@ class DbusAppMenu(object):
 		self.items     = []
 		self.session   = session
 		self.window    = window
+		self.signal_matcher = []
 		self.interface = self.get_interface()
 		self.top_level_menus = []
 		self.results = None
@@ -156,6 +196,9 @@ class DbusAppMenu(object):
 			name, path = interface.GetMenuForWindow(self.window.get_xid())
 			object     = self.session.get_object(name, path)
 			interface  = dbus.Interface(object, 'com.canonical.dbusmenu')
+
+			s = interface.connect_to_signal('ItemsPropertiesUpdated', self.on_actions_changed)
+			self.signal_matcher.append(s)
 
 			return interface
 		except dbus.exceptions.DBusException:
@@ -202,3 +245,92 @@ class DbusAppMenu(object):
 		elif bool(menu_item.label) or menu_item.separator:
 			self.actions[menu_item.text] = menu_item.action
 			self.items.append(menu_item)
+
+	def on_actions_changed(self, updated, removed):
+		for upd in updated:
+			action_number = int(upd[0])
+			item = filter(lambda x: x.action == action_number, self.items)
+			item = next(item, None)
+			print(f'{item.label if item is not None else None}, ', end='')
+			if item is not None:
+				item.update_props(upd[1])
+			else:
+				print("upd not found ", upd)
+
+		print(f'\n279:{removed=}')
+
+	def remove_actions_listener(self):
+		for s in self.signal_matcher:
+			s.remove()
+		self.signal_matcher = []
+
+
+class MenuModel:
+	# The menubars have to be reused so they are cleanup
+	def __init__(self, session, window):
+		self._session = session
+		self.window = window
+		self._init_window(session, window)
+
+	def _init_window(self, session, window):
+		self.appmenu = DbusAppMenu(session, window)
+		self.gtkmenu = DbusGtkMenu(session, window)
+
+	def _update_menus(self):
+		self.gtkmenu.get_results()
+		if not len(self.gtkmenu.items):
+			self.appmenu.get_results()
+
+	@property
+	def actions(self):
+		actions = self.gtkmenu.actions
+		if not len(actions):
+			actions = self.appmenu.actions
+
+		self.handle_empty(actions)
+
+		return actions.keys()
+
+	@property
+	def accel(self):
+		accel = self.gtkmenu.accels
+		if not len(accel):
+			accel = self.appmenu.accels
+		return accel
+
+	@property
+	def items(self):
+		items = self.appmenu.items
+		if not len(items):
+			items = self.gtkmenu.items
+		return items
+
+	@property
+	def top_level_menus(self):
+		if len(self.gtkmenu.top_level_menus):
+			return self.gtkmenu.top_level_menus
+		else:
+			return self.appmenu.top_level_menus
+
+	def activate(self, selection):
+		if selection in self.gtkmenu.actions:
+			self.gtkmenu.activate(selection)
+
+		elif selection in self.appmenu.actions:
+			self.appmenu.activate(selection)
+
+	def handle_empty(self, actions):
+		if not len(actions):
+			alert = 'No menu items available!'
+			promt = ''
+			try:
+				promt = self.prompt
+			except Exception as e:
+				pass
+			print('Gnome HUD: WARNING: (%s) %s' % (promt, alert))
+
+	def __del__(self):
+		if self.appmenu is not None:
+			self.appmenu.remove_actions_listener()
+		if self.gtkmenu is not None:
+			self.gtkmenu.remove_actions_listener()
