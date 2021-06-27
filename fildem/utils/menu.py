@@ -143,5 +143,9 @@ class DbusMenu:
 	def items(self):
 		return self._menu_model.items
 
+	@property
+	def tree(self):
+		return self._menu_model.tree
+
 	def activate(self, selection):
 		self._menu_model.activate(selection)
