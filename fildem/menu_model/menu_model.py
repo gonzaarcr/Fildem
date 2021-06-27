@@ -37,8 +37,8 @@ class DbusGtkMenu(object):
 			self.send_action(action, 'unity.', self.menubar_path)
 
 	def send_action(self, name, prefix, path):
-		object    = self.session.get_object(self.bus_name, path)
-		interface = dbus.Interface(object, dbus_interface='org.gtk.Actions')
+		obj       = self.session.get_object(self.bus_name, path)
+		interface = dbus.Interface(obj, dbus_interface='org.gtk.Actions')
 
 		interface.Activate(name.replace(prefix, ''), [], dict())
 
@@ -46,8 +46,8 @@ class DbusGtkMenu(object):
 		paths = [self.appmenu_path, self.menubar_path]
 
 		for path in filter(None, paths):
-			object    = self.session.get_object(self.bus_name, path)
-			interface = dbus.Interface(object, dbus_interface='org.gtk.Menus')
+			obj       = self.session.get_object(self.bus_name, path)
+			interface = dbus.Interface(obj, dbus_interface='org.gtk.Menus')
 			try:
 				results   = interface.Start([x for x in range(1024)])
 				interface.End([x for x in range(1024)])
@@ -110,8 +110,8 @@ class DbusGtkMenu(object):
 
 		dot = action.find('.')
 		action = action[dot+1:]
-		object    = self.session.get_object(self.bus_name, path)
-		interface = dbus.Interface(object, dbus_interface='org.gtk.Actions')
+		obj = self.session.get_object(self.bus_name, path)
+		interface = dbus.Interface(obj, dbus_interface='org.gtk.Actions')
 
 		try:
 			description = interface.Describe(action)
@@ -122,9 +122,9 @@ class DbusGtkMenu(object):
 		checked = description[2]
 		return enabled, checked
 
-	def connect_to_actions_iface(self, object):
+	def connect_to_actions_iface(self, obj):
 		try:
-			iface = dbus.Interface(object, dbus_interface='org.gtk.Actions')
+			iface = dbus.Interface(obj, dbus_interface='org.gtk.Actions')
 			s = iface.connect_to_signal('Changed', self.on_gtk_actions_changed)
 			self.signal_matcher.append(s)
 		except Exception as e:
@@ -191,14 +191,14 @@ class DbusAppMenu(object):
 		bus_path = '/com/canonical/AppMenu/Registrar'
 
 		try:
-			object     = self.session.get_object(bus_name, bus_path)
-			interface  = dbus.Interface(object, bus_name)
+			obj        = self.session.get_object(bus_name, bus_path)
+			interface  = dbus.Interface(obj, bus_name)
 			name, path = interface.GetMenuForWindow(self.window.get_xid())
-			object     = self.session.get_object(name, path)
-			interface  = dbus.Interface(object, 'com.canonical.dbusmenu')
+			obj        = self.session.get_object(name, path)
+			interface  = dbus.Interface(obj, 'com.canonical.dbusmenu')
 
-			s = interface.connect_to_signal('ItemsPropertiesUpdated', self.on_actions_changed)
-			self.signal_matcher.append(s)
+			# s = interface.connect_to_signal('ItemsPropertiesUpdated', self.on_actions_changed)
+			# self.signal_matcher.append(s)
 
 			return interface
 		except dbus.exceptions.DBusException:
