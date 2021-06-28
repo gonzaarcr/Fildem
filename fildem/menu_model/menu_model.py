@@ -59,7 +59,7 @@ class DbusGtkMenu(object):
 
 			s = interface.connect_to_signal('Changed', self.on_actions_changed)
 			self.signal_matcher.append(s)
-			self.connect_to_actions_iface(object)
+			self.connect_to_actions_iface(obj)
 
 			for menu in results:
 				self.results[(menu[0], menu[1])] = menu[2]
@@ -221,7 +221,6 @@ class DbusAppMenu(object):
 			self.tree.create_node('Root', 'Root')
 			try:
 				self.collect_entries(self.results[1], treelib_parent='Root')
-				self.tree.show()
 			except Exception:
 				pass
 
@@ -247,6 +246,7 @@ class DbusAppMenu(object):
 		if bool(menu_item.label) and menu_item.label != 'Root' and menu_item.label != 'DBusMenuRoot':
 			menu_path = labels + [menu_item.label]
 
+		self.tree.create_node(menu_item.label, menu_item.action, parent=treelib_parent, data=menu_item)
 		if len(item[2]):
 			if not self.top_level_menus:
 				self.top_level_menus = list(map(lambda c: c[1].get('label', ''), item[2]))
@@ -257,7 +257,6 @@ class DbusAppMenu(object):
 		elif bool(menu_item.label) or menu_item.separator:
 			self.actions[menu_item.text] = menu_item.action
 			self.items.append(menu_item)
-			self.tree.create_node(menu_item.label, menu_item.action, parent=treelib_parent, data=menu_item)
 
 	def on_actions_changed(self, updated, removed):
 		print(f'251:{updated=}')
