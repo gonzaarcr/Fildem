@@ -27,7 +27,6 @@ class DbusMenu:
 		self._init_window()
 		self._listen_menu_activated()
 		self._listen_hud_activated()
-		self._width_offset = 300
 		WindowManager.add_listener(self.on_window_switched)
 
 	def _init_window(self):
@@ -62,8 +61,9 @@ class DbusMenu:
 			return
 
 		if x != -1:
-			self._width_offset = x
-		self._start_app(menu)
+			self._start_app(menu, x)
+		else:
+			self._start_app(menu)
 
 	def on_hud_activated(self):
 		menu = HudMenu(self)
@@ -77,11 +77,11 @@ class DbusMenu:
 		if self.app is None:
 			return
 
-		self.app.move_window(x) 
+		self.app.move_window(x)
 
-	def _start_app(self, menu_activated: str):
+	def _start_app(self, menu_activated: str, offset=300):
 		if self.app is None:
-			self.app = GlobalMenu(self, menu_activated, self._width_offset)
+			self.app = GlobalMenu(self, menu_activated, offset)
 			self.app.connect('shutdown', self.on_app_shutdown)
 			self.app.run()
 

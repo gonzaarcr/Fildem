@@ -3,7 +3,7 @@
 import dbus
 import time
 
-from ..treelib import Node, Tree
+from ..treelib import Tree
 
 from fildem.menu_model.menu_item import DbusGtkMenuItem, DbusAppMenuItem
 
@@ -219,10 +219,7 @@ class DbusAppMenu(object):
 		if self.interface:
 			self.results = self.interface.GetLayout(0, -1, dbus.Array(signature="s"))
 			self.tree.create_node('Root', 'Root')
-			try:
-				self.collect_entries(self.results[1], treelib_parent='Root')
-			except Exception:
-				pass
+			self.collect_entries(self.results[1], treelib_parent='Root')
 
 	def collect_entries(self, item=None, labels=None, treelib_parent=None):
 		if self.results is None:
