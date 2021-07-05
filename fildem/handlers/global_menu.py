@@ -173,7 +173,7 @@ class CommandWindow(Gtk.ApplicationWindow):
 
 	def set_tree_menu(self, tree):
 		self.destroy_menus()
-		children = tree.children(tree.root)
+		children = tree.children(tree[tree.root].identifier)
 		for c in children:
 			menu = Menu(tree, c, self.accel_group)
 			button = Gtk.MenuItem()
@@ -308,9 +308,9 @@ class GlobalMenu(Gtk.Application):
 		self.window.connect('focus-out-event', self.on_hide_window)
 
 	def add_menus(self):
-		ac = self.dbus_menu.actions
-		for item in self.dbus_menu.items:
-			self.add_menu_action(item)
+		for item in self.dbus_menu.tree.leaves():
+			self.add_menu_action(item.data)
+
 		self.window.set_tree_menu(self.dbus_menu.tree)
 		self.window.show_all()
 

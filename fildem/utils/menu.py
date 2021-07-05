@@ -113,7 +113,7 @@ class DbusMenu:
 		self._menu_model._update_menus()
 
 		max_tries = 2
-		if self.tries < max_tries and not len(self.items):
+		if self.tries < max_tries and self.tree.root is None:
 			self.tries += 1
 			self.retry_timer_id = GLib.timeout_add_seconds(2, self._retry_init)
 
@@ -138,10 +138,6 @@ class DbusMenu:
 
 	def accel(self):
 		return self._menu_model.accel
-
-	@property
-	def items(self):
-		return self._menu_model.items
 
 	@property
 	def tree(self):

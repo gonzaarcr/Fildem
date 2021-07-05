@@ -14,7 +14,6 @@ class DbusGtkMenu(object):
 		self.results      = {}
 		self.actions      = {}
 		self.accels       = {}
-		self.items        = []
 		self.tree         = Tree()
 		self.session      = session
 		self.bus_name     = window.get_utf8_prop('_GTK_UNIQUE_BUS_NAME')
@@ -66,7 +65,8 @@ class DbusGtkMenu(object):
 
 		self.tree.create_node('Root', 'Root')
 		self.collect_entries(treelib_parent='Root')
-		# self.tree.show()
+		if not len(self.tree.children(self.tree[self.tree.root].identifier)):
+			self.tree = Tree()
 
 	def collect_entries(self, menu=(0, 0), labels=[], treelib_parent=None):
 		section = (menu[0], menu[1])
@@ -90,7 +90,6 @@ class DbusGtkMenu(object):
 					self.collect_entries(menu[':submenu'], menu_path, menu_item.action)
 				elif 'action' in menu:
 					self.actions[menu_item.text] = menu_item.action
-					self.items.append(menu_item)
 
 			elif ':section' in menu:
 				self.collect_entries(menu[':section'], labels, treelib_parent)
@@ -169,7 +168,6 @@ class DbusAppMenu(object):
 	def __init__(self, session, window):
 		self.actions   = {}
 		self.accels    = {}
-		self.items     = []
 		self.tree      = Tree()
 		self.session   = session
 		self.window    = window
@@ -189,7 +187,6 @@ class DbusAppMenu(object):
 		# Electron apps change a lot their menus, we have to update to retry
 		self.actions = {}
 		self.accels = {}
-		self.items = []
 		self.tree = Tree()
 		results = self.interface.GetLayout(0, -1, dbus.Array(signature="s"))
 		self.collect_entries(results[1], [])
@@ -219,6 +216,9 @@ class DbusAppMenu(object):
 		if self.interface:
 			self.results = self.interface.GetLayout(0, -1, dbus.Array(signature="s"))
 			self.collect_entries(self.results[1])
+
+			if not len(self.tree.children(self.tree[self.tree.root].identifier)):
+				self.tree = Tree()
 
 	def collect_entries(self, item=None, labels=None, treelib_parent=None):
 		if self.results is None:
@@ -252,7 +252,6 @@ class DbusAppMenu(object):
 
 		elif bool(menu_item.label) or menu_item.separator:
 			self.actions[menu_item.text] = menu_item.action
-			self.items.append(menu_item)
 
 	def on_actions_changed(self, updated, removed):
 		print(f'251:{updated=}')
@@ -289,7 +288,7 @@ class MenuModel:
 
 	def _update_menus(self):
 		self.gtkmenu.get_results()
-		if not len(self.gtkmenu.items):
+		if not len(self.gtkmenu.tree):
 			self.appmenu.get_results()
 
 	@property
@@ -314,16 +313,9 @@ class MenuModel:
 		return accel
 
 	@property
-	def items(self):
-		items = self.appmenu.items
-		if not len(items):
-			items = self.gtkmenu.items
-		return items
-
-	@property
 	def tree(self):
 		tree = self.appmenu.tree
-		if not len(tree):
+		if tree.root is None:
 			tree = self.gtkmenu.tree
 		return tree
 
