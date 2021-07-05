@@ -159,7 +159,6 @@ class CommandWindow(Gtk.ApplicationWindow):
 	def open_menu_by_name(self, name):
 		name = name.replace('_', '')
 		for menu in self.my_menu_bar.get_children():
-			print(f'{menu.get_label()=}')
 			if menu.get_label().replace('_', '') == name:
 				self.open_menu_shortcut(menu)
 				break

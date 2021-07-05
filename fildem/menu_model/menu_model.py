@@ -218,8 +218,7 @@ class DbusAppMenu(object):
 	def get_results(self):
 		if self.interface:
 			self.results = self.interface.GetLayout(0, -1, dbus.Array(signature="s"))
-			self.tree.create_node('Root', 'Root')
-			self.collect_entries(self.results[1], treelib_parent='Root')
+			self.collect_entries(self.results[1])
 
 	def collect_entries(self, item=None, labels=None, treelib_parent=None):
 		if self.results is None:
