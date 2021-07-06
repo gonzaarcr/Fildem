@@ -84,7 +84,7 @@ class DbusGtkMenu(object):
 
 				menu_path = labels + [menu_item.label]
 
-				self.tree.create_node(menu_item.label, menu_item.action, parent=treelib_parent, data=menu_item)
+				self.tree.create_node(menu_item.label, menu_item.action, treelib_parent, data=menu_item)
 
 				if ':submenu' in menu:
 					self.collect_entries(menu[':submenu'], menu_path, menu_item.action)
@@ -143,19 +143,22 @@ class DbusGtkMenu(object):
 		"""
 		The name of the actions doesn't have the unity. app. or win. preprended
 		"""
-		print(f'on_gtk_actions_changed')
-		for action_name in enabled_changed:
-			item = filter(lambda it: it.action.endswith(action_name), self.items)
-			item = next(item, None)
-			if item is not None:
-				item.set_enabled(enabled_changed[action_name])
-			# item.set_description(self.describe(item.action))
+		print(f'on_gtk_actions_ch {enabled_changed=} {removed_actions=} {state_changed=} {new_actions=}')
+		prefixes = ['unity.', 'win.', 'app.']
+		# TODO group box
+		for action_name in [*enabled_changed, *state_changed]:
+			items = map(lambda prefix: self.tree.get_node(prefix + action_name), prefixes)
+			items = filter(None, items)
+			item = next(items, None)
+			if item is None:
+				print('Item does not exists:', action_name)
+				continue
 
-		for action_name in state_changed:
-			item = filter(lambda it: it.action.endswith(action_name), self.items)
-			item = next(item, None)
-			if item is not None:
-				item.set_description(self.describe(item.action))
+			if action_name in enabled_changed:
+				item.data.enabled = enabled_changed[action_name]
+			else:
+				item.data.enabled = state_changed[action_name]
+				item.data.set_description(self.describe(item.data.action))
 
 	def remove_actions_listener(self):
 		for s in self.signal_matcher:

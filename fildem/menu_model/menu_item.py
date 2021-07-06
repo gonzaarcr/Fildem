@@ -38,6 +38,11 @@ class DbusGtkMenuItem(object):
 			self.toggle_type = 'radio'
 			self.toggle_state = len(toggle) > 0
 
+	def set_description(self, desc):
+		if desc is None:
+			return
+		self.enabled = desc[0]
+		self.toggle_state = desc[1]
 
 class DbusAppMenuItem(object):
 
