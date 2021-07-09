@@ -108,6 +108,7 @@ class DbusMenu:
 	def _retry_init(self):
 		self.retry_timer_id = 0
 		self._init_window()
+		return False
 
 	def _update_menus(self):
 		self._menu_model._update_menus()

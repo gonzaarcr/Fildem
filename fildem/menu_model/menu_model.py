@@ -3,6 +3,8 @@
 import dbus
 import time
 
+from gi.repository import GLib
+
 from ..treelib import Tree
 
 from fildem.menu_model.menu_item import DbusGtkMenuItem, DbusAppMenuItem
@@ -15,6 +17,7 @@ class DbusGtkMenu(object):
 		self.actions      = {}
 		self.accels       = {}
 		self.tree         = Tree()
+		self._update_timer = 0
 		self.session      = session
 		self.bus_name     = window.get_utf8_prop('_GTK_UNIQUE_BUS_NAME')
 		# with app. prefix
@@ -139,13 +142,12 @@ class DbusGtkMenu(object):
 	def on_actions_changed(self, *args):
 		print(f'on_actions_changed {args=}')
 
-	def on_gtk_actions_changed(self, removed_actions, enabled_changed, state_changed, new_actions):
+	def on_gtk_actions_changed(self, removed, enabled_changed, state_changed, new_actions):
 		"""
 		The name of the actions doesn't have the unity. app. or win. preprended
 		"""
-		print(f'on_gtk_actions_ch {enabled_changed=} {removed_actions=} {state_changed=} {new_actions=}')
+		# print(f'{enabled_changed=} {removed=} {state_changed=} {new_actions=}')
 		prefixes = ['unity.', 'win.', 'app.']
-		# TODO group box
 		for action_name in [*enabled_changed, *state_changed]:
 			items = map(lambda prefix: self.tree.get_node(prefix + action_name), prefixes)
 			items = filter(None, items)
@@ -157,8 +159,13 @@ class DbusGtkMenu(object):
 			if action_name in enabled_changed:
 				item.data.enabled = enabled_changed[action_name]
 			else:
-				item.data.enabled = state_changed[action_name]
-				item.data.set_description(self.describe(item.data.action))
+				if item.data.toggle_type == 'radio': # 'checkmark':
+					for s in self.tree.siblings(item.identifier):
+						if s.data.section == item.data.section:
+							s.data.toggle_state = False
+				item.data.toggle_state = state_changed[action_name]
+				# item.data.enabled = state_changed[action_name]
+				# item.data.set_description(self.describe(item.data.action))
 
 	def remove_actions_listener(self):
 		for s in self.signal_matcher:
@@ -174,6 +181,7 @@ class DbusAppMenu(object):
 		self.tree      = Tree()
 		self.session   = session
 		self.window    = window
+		self._update_timer = 0
 		self.signal_matcher = []
 		self.interface = self.get_interface()
 		self.top_level_menus = []
@@ -207,8 +215,10 @@ class DbusAppMenu(object):
 			obj        = self.session.get_object(name, path)
 			interface  = dbus.Interface(obj, 'com.canonical.dbusmenu')
 
-			# s = interface.connect_to_signal('ItemsPropertiesUpdated', self.on_actions_changed)
-			# self.signal_matcher.append(s)
+			s = interface.connect_to_signal('ItemsPropertiesUpdated', self.on_actions_changed)
+			self.signal_matcher.append(s)
+			s = interface.connect_to_signal('LayoutUpdated', self.layout_updated)
+			self.signal_matcher.append(s)
 
 			return interface
 		except dbus.exceptions.DBusException:
@@ -245,7 +255,7 @@ class DbusAppMenu(object):
 		if bool(menu_item.label) and menu_item.label != 'Root' and menu_item.label != 'DBusMenuRoot':
 			menu_path = labels + [menu_item.label]
 
-		self.tree.create_node(menu_item.label, menu_item.action, parent=treelib_parent, data=menu_item)
+		self.tree.create_node(menu_item.label, menu_item.action, treelib_parent, data=menu_item)
 		if len(item[2]):
 			if not self.top_level_menus:
 				self.top_level_menus = list(map(lambda c: c[1].get('label', ''), item[2]))
@@ -257,23 +267,38 @@ class DbusAppMenu(object):
 			self.actions[menu_item.text] = menu_item.action
 
 	def on_actions_changed(self, updated, removed):
-		print(f'251:{updated=}')
 		for upd in updated:
-			action_number = int(upd[0])
-			item = filter(lambda x: x.action == action_number, self.items)
-			item = next(item, None)
-			print(f'{item.label if item is not None else None}, ', end='')
+			item = self.tree.get_node(int(upd[0]))
 			if item is not None:
-				item.update_props(upd[1])
-			else:
-				print("upd not found ", upd)
+				item.data.update_props(upd[1])
+				if 'children-display' in upd[1]:
+					# Just update everything
+					self.add_timer()
+					break
 
-		print(f'\n279:{removed=}')
+		# TODO removed
+
+	def layout_updated(self, revision, parent):
+		self.add_timer()
+
+	def add_timer(self):
+		if self._update_timer == 0:
+			self._update_timer = GLib.timeout_add(200, self._update)
+
+	def _update(self):
+		self.actions = {}
+		self.accels = {}
+		self.tree = Tree()
+		self.get_results()
+		self._update_timer = 0
+		return False
 
 	def remove_actions_listener(self):
 		for s in self.signal_matcher:
 			s.remove()
 		self.signal_matcher = []
+		if self._update_timer != 0:
+			GLib.source_remove(self._update_timer)
 
 
 class MenuModel:
