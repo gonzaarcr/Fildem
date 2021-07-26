@@ -6,11 +6,11 @@
 
 ![Fildem](https://user-images.githubusercontent.com/19943481/95288612-1d272a80-083f-11eb-9400-be88f61e054d.png)
 
-This project is a fork of gnomehud with the adition of a global menu bar. It consists of a Gnome Shell extension and a external program, you must install both for the application to work.
+This project is a fork of gnomehud with the addition of a global menu bar. It consists of a Gnome Shell extension and an external program, you must install both for the application to work.
 
 You can also bring a HUD menu with Alt + Space (on Xorg).
 
-This is a prototype, as I don’t know if people will like it or how long it will last until devs nuke it, so fell free to let me know your opinion.
+This is a prototype, as I don’t know if people will like it or how long it will last until devs nuke it, so feel free to let me know your opinion.
 
 ## Installation
 
@@ -28,7 +28,7 @@ Download the .zst file from the releases section and run `sudo pacman -U ./pytho
 
 ## Configuration
 
-In order for the application to work, you must configure the following files (aplies to all operating systems):
+In order for the application to work, you must configure the following files (applies to all operating systems):
 
 - Create the file `~/.gtkrc-2.0` and append `gtk-modules="appmenu-gtk-module"`
 - The file `~/.config/gtk-3.0/settings.ini` should have the line `gtk-modules="appmenu-gtk-module"` under [Settings]. If it doesn’t exist create it and paste the following
@@ -85,4 +85,4 @@ To see a list of apps that work check [the wiki](https://github.com/gonzaarcr/Fi
 
 ## Installation troubleshooting
 
-If you have any question on to get it to work, please don’t create an issue, use [this discussion](https://github.com/gonzaarcr/Fildem/discussions/33).
+If you have any questions on how to get it to work, please don’t create an issue, use [this discussion](https://github.com/gonzaarcr/Fildem/discussions/33).
