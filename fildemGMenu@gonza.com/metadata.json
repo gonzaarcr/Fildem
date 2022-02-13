@@ -5,7 +5,8 @@
   "shell-version": [
     "3.36",
     "3.38",
-    "40"
+    "40",
+    "41"
   ],
   "url": "https://github.com/gonzaarcr/Fildem",
   "uuid": "fildemGMenu@gonza.com"
