@@ -1,10 +1,11 @@
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
-const Config = imports.misc.config;
+import GObject from 'gi://GObject?version=2.0';
+import Gio from 'gi://Gio?version=2.0';
+import Gtk from 'gi://Gtk?version=4.0';
+import * as Config from 'resource:///org/gnome/Shell/Extensions/js/misc/config.js';
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const Settings = Me.imports.settings.FildemGlobalMenuSettings;
+// import {Extension as Me} from 'resource:///org/gnome/shell/extensions/extension.js';
+import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import {FildemGlobalMenuSettings as Settings} from './settings.js';
 
 const SHELL_VERSION = Config.PACKAGE_VERSION;
 
@@ -12,11 +13,11 @@ const SHELL_VERSION = Config.PACKAGE_VERSION;
 const PrefsWidget = GObject.registerClass(
 class PrefsWidget extends Gtk.Box {	
 
-	_init(settings, params) {
+	_init(conf, settings, params) {
 		super._init(params);
 
 		this._buildable = new Gtk.Builder();
-		this._buildable.add_from_file(Me.path + '/settings.ui');
+		this._buildable.add_from_file(conf.path + '/settings.ui');
 
 		let prefsWidget = this._getWidget('prefs_widget');
 		if (SHELL_VERSION < '40') {
@@ -87,9 +88,15 @@ function init() {
 
 }
 
-function buildPrefsWidget() {
-	let settings = new Settings(Me.metadata['settings-schema']);
-	let widget = new PrefsWidget(settings);
+export default class FildemMenuExtensionPrefs extends ExtensionPreferences {
+	getPreferencesWidget() {
+		return buildPrefsWidget(this);
+	}
+}
+
+function buildPrefsWidget(conf) {
+	let settings = new Settings(conf, conf.metadata['settings-schema']);
+	let widget = new PrefsWidget(conf, settings);
 	widget.show_all();
 
 	return widget;

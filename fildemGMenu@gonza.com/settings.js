@@ -1,13 +1,15 @@
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
+import GObject from 'gi://GObject?version=2.0';
+import Gio from 'gi://Gio?version=2.0';
 const GioSSS = Gio.SettingsSchemaSource;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
 
 var FildemGlobalMenuSettings = GObject.registerClass(
 class FildemGlobalMenuSettings extends Gio.Settings {
-	_init(schema) {
-		let schemaDir    = Me.dir.get_child('schemas');
+	constructor(conf, schema) {
+		super(schema, conf);
+	}
+
+	_init(schema, conf) {
+		let schemaDir    = conf.dir.get_child('schemas');
 		let schemaSource = null;
 
 		if (schemaDir.query_exists(null)) {
@@ -26,3 +28,5 @@ class FildemGlobalMenuSettings extends Gio.Settings {
 		super._init({ settings_schema: schemaObj });
 	}
 });
+
+export {FildemGlobalMenuSettings};

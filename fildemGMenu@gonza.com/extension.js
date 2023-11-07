@@ -1,19 +1,23 @@
 'use strict';
 
-const { loadInterfaceXML } = imports.misc.fileUtils;
+// import {loadInterfaceXML} from 'resource:///org/gnome/shell/misc/fileUtils.js';
 
-const { Clutter, Gio, GLib, GObject, Meta, St } = imports.gi;
+import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio?version=2.0';
+import GLib from 'gi://GLib?version=2.0';
+import GObject from 'gi://GObject?version=2.0';
+import Meta from 'gi://Meta';
+import St from 'gi://St?';
+import Shell from 'gi://Shell';
 
-const AppSystem  = imports.gi.Shell.AppSystem.get_default();
-const WinTracker = imports.gi.Shell.WindowTracker.get_default();
+import { Extension as GExtension } from "resource:///org/gnome/shell/extensions/extension.js";
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+const WinTracker = Shell.WindowTracker.get_default();
 
-const Settings = Me.imports.settings.FildemGlobalMenuSettings;
-const Main = imports.ui.main;
-const PanelMenu = imports.ui.panelMenu;
-const WindowMenu = imports.ui.windowMenu;
+import { FildemGlobalMenuSettings as Settings } from './settings.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as WindowMenu from 'resource:///org/gnome/shell/ui/windowMenu.js';
 
 
 function log(msg) {
@@ -106,7 +110,7 @@ const WindowActions = class WindowActions {
 			if (rightMonitorIndex != -1)
 				this.actions.push('Move to Monitor Right');
 		}
-		
+
 		if (win.can_close())
 			this.actions.push('Close');
 
@@ -448,7 +452,7 @@ const MenuBar = class MenuBar {
 		this._restoreLabel();
 		this._hideMenu();
 		const overview = Main.overview.visibleTarget;
-		const focusApp = WinTracker.focus_app || Main.panel.statusArea.appMenu._targetApp;
+		const focusApp = WinTracker.focus_app || Main.panel.statusArea.appMenu?._targetApp;
 		if (focusApp) {
 			let windowData = {};
 			// TODO does the window matter?
@@ -680,15 +684,14 @@ class Extension {
 
 let extension;
 
-function init(metadata) {
-}
+export default class FildemMenuExtension extends GExtension {
+	enable() {
+		let settings = new Settings(this, this.metadata['settings-schema']);
+		extension = new Extension(settings);
+	}
 
-function enable() {
-	let settings = new Settings(Me.metadata['settings-schema']);
-	extension = new Extension(settings);
-}
-
-function disable() {
-	extension.destroy();
-	extension = null;
+	disable() {
+		extension.destroy();
+		extension = null;
+	}
 }
